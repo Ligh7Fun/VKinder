@@ -87,9 +87,9 @@ class DataBase:
             None.
         """
         self.session.add(ViewData(
-                vk_id=self_id,
-                viewed_vk_id=user_id,
-                status_id=1
+            vk_id=self_id,
+            viewed_vk_id=user_id,
+            status_id=1
         )
         )
         self.session.commit()
@@ -109,9 +109,9 @@ class DataBase:
             None.
         """
         self.session.add(ViewData(
-                vk_id=self_id,
-                viewed_vk_id=user_id,
-                status_id=2
+            vk_id=self_id,
+            viewed_vk_id=user_id,
+            status_id=2
         )
         )
         self.session.commit()
@@ -132,8 +132,8 @@ class DataBase:
             None
         """
         obj = self.session.query(ViewData).filter_by(
-                vk_id=self_id,
-                viewed_vk_id=user_id
+            vk_id=self_id,
+            viewed_vk_id=user_id
         ).first()
         # Если статус отличается, то меняем, если нет, ничего не делаем
         if obj.status_id != new_status_id:
@@ -141,17 +141,21 @@ class DataBase:
             self.session.commit()
 
     def request_liked_list(self, self_id: int) -> list:
-        """Возвращает список лайкнутых пользователей
+        """Возвращает список(словарей) лайкнутых пользователей
 
         Args:
             self_id (int): ID пользователя который добавил
         Returns:
-            List
+            List: Список словарей, содержащих следующие ключи:
+
+                - 'vk_id': ID пользователя, который добавил лайк
+                - 'viewedvkid': ID пользователя, кому был поставлен лайк
+                - 'status_id': ID статуса.
         """
         return_list = []
         query = self.session.query(ViewData).filter_by(
-                vk_id=self_id,
-                status_id=1
+            vk_id=self_id,
+            status_id=1
         ).all()
 
         for item in query:
@@ -165,18 +169,21 @@ class DataBase:
         return return_list
 
     def request_disliked_list(self, self_id: int) -> list:
-
-        """Возвращает список дизлайкнутых пользователей
+        """Возвращает список(словарей) дизлайкнутых пользователей
 
         Args:
             self_id (int): ID пользователя который добавил
         Returns:
-            List
+            List: Список словарей, содержащих следующие ключи:
+
+                - 'vk_id': ID пользователя, который добавил дизлайк
+                - 'viewedvkid': ID пользователя, кому был поставлен дизлайк
+                - 'status_id': ID статуса.
         """
         return_list = []
         query = self.session.query(ViewData).filter_by(
-                vk_id=self_id,
-                status_id=2
+            vk_id=self_id,
+            status_id=2
         ).all()
         for item in query:
             result_dict = {
@@ -195,11 +202,11 @@ class DataBase:
             self_id (int): ID пользователя, который добавляет
             user_id (int): ID пользователя, которого добавляют
         Returns:
-            Boolean
+            bool: "True" если пользователь был просмотрен ранее, иначе "False"
         """
         query = self.session.query(ViewData).filter_by(
-                vk_id=self_id,
-                viewed_vk_id=user_id,
+            vk_id=self_id,
+            viewed_vk_id=user_id,
         ).first()
 
         return bool(query)
