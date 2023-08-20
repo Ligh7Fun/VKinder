@@ -72,7 +72,9 @@ class DataBase:
             self.session.add(User(vk_id=self_id))
             self.session.commit()
 
-    def add_like(self, self_id: int, user_id: int) -> None:
+    def add_like(self, self_id: int,
+                 user_id: int
+                 ) -> None:
         """
         Добавить предложенного пользователя в список
         со статусом "лайк"(избранное).
@@ -85,10 +87,16 @@ class DataBase:
             None.
         """
         self.session.add(ViewData(
-            vk_id=self_id, viewed_vk_id=user_id, status_id=1))
+                vk_id=self_id,
+                viewed_vk_id=user_id,
+                status_id=1
+        )
+        )
         self.session.commit()
 
-    def add_dislike(self, self_id: int, user_id: int) -> None:
+    def add_dislike(self, self_id: int,
+                    user_id: int
+                    ) -> None:
         """
         Добавить предложенного пользователя в список
         со статусом "дизлайк"(черный список).
@@ -101,7 +109,11 @@ class DataBase:
             None.
         """
         self.session.add(ViewData(
-            vk_id=self_id, viewed_vk_id=user_id, status_id=2))
+                vk_id=self_id,
+                viewed_vk_id=user_id,
+                status_id=2
+        )
+        )
         self.session.commit()
 
     def change_status(self,
@@ -113,16 +125,81 @@ class DataBase:
 
         Args:
             self_id (int): ID пользователя, который добавляет
-            user_id (int): ID полтзователя, которого добавляют
+            user_id (int): ID пользователя, которого добавляют
             new_status_id (int): ID нового статуса
 
         Returns:
             None
         """
         obj = self.session.query(ViewData).filter_by(
-            vk_id=self_id,
-            viewed_vk_id=user_id).first()
+                vk_id=self_id,
+                viewed_vk_id=user_id
+        ).first()
         # Если статус отличается, то меняем, если нет, ничего не делаем
         if obj.status_id != new_status_id:
             obj.status_id = new_status_id
             self.session.commit()
+
+    def request_liked_list(self, self_id: int) -> list:
+        """Возвращает список лайкнутых пользователей
+
+        Args:
+            self_id (int): ID пользователя который добавил
+        Returns:
+            List
+        """
+        return_list = []
+        query = self.session.query(ViewData).filter_by(
+                vk_id=self_id,
+                status_id=1
+        ).all()
+
+        for item in query:
+            result_dict = {
+                "vk_id": item.vk_id,
+                "viewed_vk_id": item.viewed_vk_id,
+                "status_id": item.status_id
+            }
+            return_list.append(result_dict)
+
+        return return_list
+
+    def request_disliked_list(self, self_id: int) -> list:
+
+        """Возвращает список дизлайкнутых пользователей
+
+        Args:
+            self_id (int): ID пользователя который добавил
+        Returns:
+            List
+        """
+        return_list = []
+        query = self.session.query(ViewData).filter_by(
+                vk_id=self_id,
+                status_id=2
+        ).all()
+        for item in query:
+            result_dict = {
+                "vk_id": item.vk_id,
+                "viewed_vk_id": item.viewed_vk_id,
+                "status_id": item.status_id
+            }
+            return_list.append(result_dict)
+
+        return return_list
+
+    def is_viewed(self, self_id: int, user_id: int) -> bool:
+        """Проверяет был ли пользователь предложен ранее
+
+        Args:
+            self_id (int): ID пользователя, который добавляет
+            user_id (int): ID пользователя, которого добавляют
+        Returns:
+            Boolean
+        """
+        query = self.session.query(ViewData).filter_by(
+                vk_id=self_id,
+                viewed_vk_id=user_id,
+        ).first()
+
+        return bool(query)
