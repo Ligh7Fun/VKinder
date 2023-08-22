@@ -311,7 +311,3 @@ if __name__ == "__main__":
     logging.info("Bot started")
     main()
 
-    # Запуск бота
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-    logging.info("Bot started")
-    main()
