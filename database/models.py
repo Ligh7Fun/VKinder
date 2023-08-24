@@ -11,6 +11,7 @@ class User(Base):
 
     id = sq.Column(sq.Integer, primary_key=True)
     vk_id = sq.Column(sq.Integer, unique=True)
+    state = sq.Column(sq.Text, default=None)
 
 
 class Status(Base):

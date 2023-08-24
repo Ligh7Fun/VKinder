@@ -5,6 +5,9 @@ import random
 import logging
 import json
 import re
+import os
+from dotenv import load_dotenv
+from database.db import DataBase
 
 user_gender = None  # Переменная для хранения пола пользователя
 favorites = {}  # Пустой словарь для хранения избранных пользователей
@@ -51,17 +54,24 @@ def process_action(user_id, action):
     if action_text.lower() == "искать по городу из профиля":
         user_city = get_user_city(user_id)
         if user_city:
-            user_states[user_id] = "waiting_for_age_from"  # Обновляем состояние для ввода возраста
+            #DB
+            db.set_state_user(user_id, "waiting_for_age_from")
+            # user_states[user_id] = "waiting_for_age_from"
+            # Обновляем состояние для ввода возраста
             city_message = f"Город из вашего профиля: {user_city}."
             confirm_keyboard = create_confirm_city_keyboard(user_city)
             write_msg(user_id, city_message, keyboard=confirm_keyboard)
             return
         else:
-            user_states[user_id] = "waiting_for_city"
+            #DB
+            db.set_state_user(user_id, "waiting_for_city")
+            # user_states[user_id] = "waiting_for_city"
             action_keyboard = create_action_keyboard(user_gender)
             write_msg(user_id, "Город не указан в вашем профиле. Введите город вручную:", keyboard=action_keyboard)
     else:
-        user_states[user_id] = "waiting_for_city"
+        #DB
+        db.set_state_user(user_id, "waiting_for_city")
+        # user_states[user_id] = "waiting_for_city"
         action_keyboard = create_action_keyboard(user_gender)
         write_msg(user_id, "Введите город для поиска:", keyboard=action_keyboard)
     print("Sent city input prompt to user", user_id)
@@ -69,11 +79,17 @@ def process_action(user_id, action):
 
 def process_confirm_change(user_id, choice):
     if choice.lower() == "да":
-        user_states[user_id] = "waiting_for_city"  # Вернуться к ожиданию ввода города
+        #DB
+        db.set_state_user(user_id, "waiting_for_city")
+        # user_states[user_id] = "waiting_for_city"  # Вернуться к ожиданию
+        # ввода города
         action_keyboard = create_action_keyboard(user_gender)
         write_msg(user_id, "Введите город для поиска:", keyboard=action_keyboard)
     elif choice.lower() == "нет":
-        user_states[user_id] = "waiting_for_action"  # Вернуться к выбору действия
+        #DB
+        db.set_state_user(user_id, "waiting_for_action")
+        # user_states[user_id] = "waiting_for_action"  # Вернуться к выбору
+        # действия
         action_keyboard = create_action_keyboard(user_gender)
         write_msg(user_id, "Что вы хотите сделать?", keyboard=action_keyboard)
     else:
@@ -107,14 +123,19 @@ def start_conversation(user_id):
     write_msg(user_id, message, keyboard)
     
     # Установка состояния пользователя в "ожидание выбора пола"
-    user_states[user_id] = "waiting_for_gender"
+    # user_states[user_id] = "waiting_for_gender"
+    #DB
+    db.set_state_user(user_id, "waiting_for_gender")
+    print("DB State: ", db.get_state_user(user_id), "user_id:", user_id)
     print("Sent gender selection keyboard to user", user_id)
 
 # Функция для обработки выбора пола
 def process_gender(user_id, gender):
     print("Processing gender selection for user", user_id)
     if gender.lower() == "мужчину" or gender.lower() == "женщину":
-        user_states[user_id] = "waiting_for_action"
+        #DB
+        db.set_state_user(user_id, "waiting_for_action")
+        # user_states[user_id] = "waiting_for_action"
         
         # Создание клавиатуры с кнопками для выбора действия
         action_keyboard = {
@@ -175,9 +196,14 @@ def process_city_input(user_id, city_name):
             write_msg(user_id, f"Вы выбрали город из профиля: {user_city}.", keyboard=keyboard)
         else:
             write_msg(user_id, "Город не указан в вашем профиле. Введите город вручную:")
-            user_states[user_id] = "waiting_for_city"
+            #DB
+            db.set_state_user(user_id, "waiting_for_city")
+            # user_states[user_id] = "waiting_for_city"
     else:
-        user_states[user_id] = "waiting_for_age_from"  # Ожидание ввода начального возраста
+        #DB
+        db.set_state_user(user_id, "waiting_for_age_from")
+        # user_states[user_id] = "waiting_for_age_from"  # Ожидание ввода
+        # начального возраста
         write_msg(user_id, f"Вы выбрали город: {city_name}. Теперь введите начальный возраст:")
 
 
@@ -224,7 +250,10 @@ def process_age_from(user_id, age_from):
     try:
         age_from = int(age_from)
         if 0 <= age_from <= 150:  # Проверка на разумный диапазон возраста
-            user_states[user_id] = "waiting_for_age_to"  # Ожидание ввода конечного возраста
+            #DB
+            db.set_state_user(user_id, "waiting_for_age_to")
+            # user_states[user_id] = "waiting_for_age_to"  # Ожидание ввода
+            # конечного возраста
             write_msg(user_id, f"Вы ввели начальный возраст: {age_from}. Теперь введите конечный возраст:")
         else:
             write_msg(user_id, "Введите корректный возраст (от 0 до 150).")
@@ -236,7 +265,10 @@ def process_age_from(user_id, age_from):
 def process_age_to(user_id, age_to):
     try:
         age_to = int(age_to)
-        user_states[user_id] = "waiting_for_search_or_city"  # Обновляем состояние для выбора действия
+        #DB
+        db.set_state_user(user_id, "waiting_for_search_or_city")
+        # user_states[user_id] = "waiting_for_search_or_city"  # Обновляем
+        # состояние для выбора действия
         write_msg(user_id, f"Вы ввели конечный возраст: {age_to}. Можете ввести другой город или продолжить поиск.", keyboard=create_search_or_city_keyboard())
     except ValueError:
         write_msg(user_id, "Некорректный ввод. Пожалуйста, введите число.") 
@@ -252,43 +284,74 @@ def create_search_or_city_keyboard():
     }
     return json.dumps(keyboard, ensure_ascii=False)
 
+def process_list_favorites(user_id):
+    pass
 
+def process_search(user_id, age_from, age_to):
+    pass
 
 def main():
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW:
             if event.to_me:
                 user_id = event.user_id
+                #DB
+                db.add_user(user_id)
+                print("DB State: ", db.get_state_user(user_id), "user_id:", user_id)
+
                 request = event.text.lower()
                 
                 logging.info(f"Received message from user {user_id}: {request}")
                 
                 if request == "начать" or request == "start":
+                    if db.get_state_user(user_id) is None:
+                        db.set_state_user(user_id, "waiting_for_gender")
                     start_conversation(user_id)
                 elif request == "пока":
                     write_msg(user_id, "До свидания!")
                 elif request == "избранные":
                     process_list_favorites(user_id)
                 else:
-                    if user_id in user_states:
-                        if user_states[user_id] == "waiting_for_gender":
-                            process_gender(user_id, request)
-                        elif user_states[user_id] == "waiting_for_action":
-                            process_action(user_id, request)
-                        elif user_states[user_id] == "waiting_for_city":
-                            process_city_input(user_id, request)
-                        elif user_states[user_id] == "waiting_for_age_from":
-                            process_age_from(user_id, request)
-                        elif user_states[user_id] == "waiting_for_age_to":
-                            process_age_to(user_id, request)
-                        elif user_states[user_id] == "waiting_for_search_or_city":
-                            if request == "выбрать другой город":
-                                user_states[user_id] = "waiting_for_city"
-                                write_msg(user_id, "Введите город для поиска:")
-                            elif request == "начать поиск":
-                                process_search(user_id, age_from, age_to)
-                    else:
-                        write_msg(user_id, "Не поняла вашей команды. Пожалуйста, начните с выбора пола.")
+                    #DB
+                    user_state_db = db.get_state_user(user_id)
+
+                    if user_state_db == "waiting_for_gender":
+                        process_gender(user_id, request)
+                    elif user_state_db == "waiting_for_action":
+                        process_action(user_id, request)
+                    elif user_state_db == "waiting_for_city":
+                        process_city_input(user_id, request)
+                    elif user_state_db == "waiting_for_age_from":
+                        process_age_from(user_id, request)
+                    elif user_state_db == "waiting_for_age_to":
+                        process_age_to(user_id, request)
+                    elif user_state_db == "waiting_for_search_or_city":
+                        if request == "выбрать другой город":
+                            db.set_state_user(user_id, "waiting_for_city")
+                            # user_state_db = "waiting_for_city"
+                            write_msg(user_id, "Введите город для поиска:")
+                        elif request == "начать поиск":
+                            process_search(user_id, age_from, age_to)
+
+                    # if user_id in user_states:
+                    #     if user_states[user_id] == "waiting_for_gender":
+                    #         process_gender(user_id, request)
+                    #     elif user_states[user_id] == "waiting_for_action":
+                    #         process_action(user_id, request)
+                    #     elif user_states[user_id] == "waiting_for_city":
+                    #         process_city_input(user_id, request)
+                    #     elif user_states[user_id] == "waiting_for_age_from":
+                    #         process_age_from(user_id, request)
+                    #     elif user_states[user_id] == "waiting_for_age_to":
+                    #         process_age_to(user_id, request)
+                    #     elif user_states[user_id] == "waiting_for_search_or_city":
+                    #         if request == "выбрать другой город":
+                    #             user_states[user_id] = "waiting_for_city"
+                    #             write_msg(user_id, "Введите город для поиска:")
+                    #         elif request == "начать поиск":
+                    #             process_search(user_id, age_from, age_to)
+                    # else:
+                    #     write_msg(user_id, "Не поняла вашей команды. Пожалуйста, начните с выбора пола.")
 
 
 
@@ -296,9 +359,12 @@ def main():
 
 if __name__ == "__main__":
     # Загрузка токена из файла "token.txt"
-    with open("token.txt", "r") as token_file:
-        token = token_file.read().strip()
+    load_dotenv()
+    token = os.getenv("TOKEN")
 
+    #DB initialization
+    db = DataBase()
+    db.create_tables()
     # Инициализация VK API
     vk_session = vk_api.VkApi(token=token)
     vk = vk_session.get_api()

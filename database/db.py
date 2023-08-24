@@ -57,20 +57,35 @@ class DataBase:
         self.session.add(Status(name=status))
         self.session.commit()
 
-    def add_user(self, self_id: int) -> None:
+    def add_user(self, self_id: int, state: str = None) -> None:
         """
         Добавить пользователя с указанным VK идентификатором.
 
         Args:
             self_id: Идентификатор пользователя VK.
-
+            state: Состояние пользователя.
         Returns:
             None
         """
         user = self.session.query(User).filter_by(vk_id=self_id).all()
         if not user:
-            self.session.add(User(vk_id=self_id))
+            self.session.add(User(vk_id=self_id, state=state))
             self.session.commit()
+
+    def get_state_user(self, self_id: int) -> str:
+        """
+        Получить состояние пользователя.
+        """
+        return self.session.query(User).filter_by(vk_id=self_id).first().state
+
+    def set_state_user(self, self_id: int, state: str) -> None:
+        """
+        Установить состояние пользователя.
+        """
+        (self.session.query(User)
+         .filter_by(vk_id=self_id)
+         .update({User.state: state}))
+        self.session.commit()
 
     def add_like(self, self_id: int,
                  user_id: int
@@ -87,9 +102,9 @@ class DataBase:
             None.
         """
         self.session.add(ViewData(
-            vk_id=self_id,
-            viewed_vk_id=user_id,
-            status_id=1
+                vk_id=self_id,
+                viewed_vk_id=user_id,
+                status_id=1
         )
         )
         self.session.commit()
@@ -109,9 +124,9 @@ class DataBase:
             None.
         """
         self.session.add(ViewData(
-            vk_id=self_id,
-            viewed_vk_id=user_id,
-            status_id=2
+                vk_id=self_id,
+                viewed_vk_id=user_id,
+                status_id=2
         )
         )
         self.session.commit()
@@ -132,8 +147,8 @@ class DataBase:
             None
         """
         obj = self.session.query(ViewData).filter_by(
-            vk_id=self_id,
-            viewed_vk_id=user_id
+                vk_id=self_id,
+                viewed_vk_id=user_id
         ).first()
         # Если статус отличается, то меняем, если нет, ничего не делаем
         if obj.status_id != new_status_id:
@@ -154,8 +169,8 @@ class DataBase:
         """
         return_list = []
         query = self.session.query(ViewData).filter_by(
-            vk_id=self_id,
-            status_id=1
+                vk_id=self_id,
+                status_id=1
         ).all()
 
         for item in query:
@@ -182,8 +197,8 @@ class DataBase:
         """
         return_list = []
         query = self.session.query(ViewData).filter_by(
-            vk_id=self_id,
-            status_id=2
+                vk_id=self_id,
+                status_id=2
         ).all()
         for item in query:
             result_dict = {
@@ -205,8 +220,8 @@ class DataBase:
             bool: "True" если пользователь был просмотрен ранее, иначе "False"
         """
         query = self.session.query(ViewData).filter_by(
-            vk_id=self_id,
-            viewed_vk_id=user_id,
+                vk_id=self_id,
+                viewed_vk_id=user_id,
         ).first()
 
         return bool(query)
