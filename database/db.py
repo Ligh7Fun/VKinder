@@ -1,7 +1,7 @@
 from sqlalchemy.orm import sessionmaker
 import sqlalchemy as sq
 from database.models import Base
-from database.models import User, Status, ViewData
+from database.models import User, Status, ViewData, Search
 from dotenv import load_dotenv
 import os
 
@@ -75,12 +75,23 @@ class DataBase:
     def get_state_user(self, self_id: int) -> str:
         """
         Получить состояние пользователя.
+
+        Args:
+            self_id: ID пользователя VK.
+        Returns:
+            State: Состояние пользователя
         """
         return self.session.query(User).filter_by(vk_id=self_id).first().state
 
     def set_state_user(self, self_id: int, state: str) -> None:
         """
         Установить состояние пользователя.
+
+        Args:
+            self_id: ID пользователя VK.
+            state: Состояние пользователя
+        Returns:
+            None
         """
         (self.session.query(User)
          .filter_by(vk_id=self_id)
@@ -104,13 +115,13 @@ class DataBase:
         self.session.add(ViewData(
                 vk_id=self_id,
                 viewed_vk_id=user_id,
-                status_id=1
+                status_id=1,
         )
         )
         self.session.commit()
 
     def add_dislike(self, self_id: int,
-                    user_id: int
+                    user_id: int,
                     ) -> None:
         """
         Добавить предложенного пользователя в список
@@ -126,7 +137,7 @@ class DataBase:
         self.session.add(ViewData(
                 vk_id=self_id,
                 viewed_vk_id=user_id,
-                status_id=2
+                status_id=2,
         )
         )
         self.session.commit()
@@ -148,7 +159,7 @@ class DataBase:
         """
         obj = self.session.query(ViewData).filter_by(
                 vk_id=self_id,
-                viewed_vk_id=user_id
+                viewed_vk_id=user_id,
         ).first()
         # Если статус отличается, то меняем, если нет, ничего не делаем
         if obj.status_id != new_status_id:
@@ -177,7 +188,7 @@ class DataBase:
             result_dict = {
                 "vk_id": item.vk_id,
                 "viewed_vk_id": item.viewed_vk_id,
-                "status_id": item.status_id
+                "status_id": item.status_id,
             }
             return_list.append(result_dict)
 
@@ -204,7 +215,7 @@ class DataBase:
             result_dict = {
                 "vk_id": item.vk_id,
                 "viewed_vk_id": item.viewed_vk_id,
-                "status_id": item.status_id
+                "status_id": item.status_id,
             }
             return_list.append(result_dict)
 
@@ -225,3 +236,70 @@ class DataBase:
         ).first()
 
         return bool(query)
+
+    def set_search(self, self_id: int,
+                   sex: str = None,
+                   city: str = None,
+                   age_from: int = None,
+                   age_to: int = None
+                   ) -> None:
+        """
+        Записать параметры поиска.
+
+        Args:
+            self_id: ID пользователя.
+            sex: Пол.
+            city: Город.
+            age_from: Нижняя граница возраста.
+            age_to: Верхняя граница возраста.
+        Returns:
+            None
+        """
+        user = self.session.query(Search).filter_by(vk_id=self_id).first()
+        if not user:
+            self.session.add(Search(
+                vk_id=self_id,
+                sex=sex,
+                city=city,
+                age_from=age_from,
+                age_to=age_to,
+            ))
+        else:
+            self.session.query(Search).filter_by(vk_id=self_id).update({
+                "sex": sex,
+                "city": city,
+                "age_from": age_from,
+                "age_to": age_to,
+            })
+
+        self.session.commit()
+
+    def get_search(self, self_id: int) -> dict:
+        """
+        Получить параметры поиска.
+
+        Args:
+            self_id: ID пользователя.
+        Returns:
+            dict: Словарь параметров поиска
+
+                - 'sex': Пол.
+                - 'city': Город.
+                - 'age_from': Нижняя граница возраста.
+                - 'age_to': Верхняя граница возраста.
+
+        """
+        query = self.session.query(Search).filter_by(
+                vk_id=self_id,
+        ).first()
+
+        if query is None:
+            return {}
+
+        result_dict = {
+            "sex": query.sex,
+            "city": query.city,
+            "age_from": query.age_from,
+            "age_to": query.age_to,
+        }
+        return result_dict

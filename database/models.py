@@ -14,6 +14,17 @@ class User(Base):
     state = sq.Column(sq.Text, default=None)
 
 
+class Search(Base):
+    __tablename__ = 'search'
+
+    id = sq.Column(sq.Integer, primary_key=True)
+    vk_id = sq.Column(sq.Integer, sq.ForeignKey('user.vk_id'))
+    age_from = sq.Column(sq.Integer, default=None)
+    age_to = sq.Column(sq.Integer, default=None)
+    sex = sq.Column(sq.Text, default=None)
+    city = sq.Column(sq.Text, default=None)
+
+
 class Status(Base):
     __tablename__ = 'status'
 

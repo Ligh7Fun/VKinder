@@ -386,6 +386,7 @@ if __name__ == "__main__":
     #DB initialization
     db = DataBase()
     db.create_tables()
+
     # Инициализация VK API
     vk_session = vk_api.VkApi(token=token)
     vk = vk_session.get_api()
