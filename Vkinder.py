@@ -67,7 +67,8 @@ def process_action(user_id, action):
             db.set_state_user(user_id, "waiting_for_city")
             # user_states[user_id] = "waiting_for_city"
             action_keyboard = create_action_keyboard(user_gender)
-            write_msg(user_id, "Город не указан в вашем профиле. Введите город вручную:", keyboard=action_keyboard)
+            write_msg(user_id, "Город не указан в вашем профиле.\nВведите "
+                               "город вручную:", keyboard=action_keyboard)
     else:
         #DB
         db.set_state_user(user_id, "waiting_for_city")
@@ -106,7 +107,8 @@ def start_conversation(user_id):
     print("Starting conversation with user", user_id)
     
     # Отправка приветственного сообщения и клавиатуры для выбора пола
-    message = "Привет! Я бот, который поможет вам найти интересных людей. Выберите пол, который вы ищете:"
+    message = ("Привет!\nЯ бот, который поможет вам найти интересных людей.\n"
+               "Выберите пол, который вы ищете:")
     
     # Создание клавиатуры с кнопками для выбора пола
     keyboard = {
@@ -193,9 +195,11 @@ def process_city_input(user_id, city_name):
         user_city = get_user_city(user_id)
         if user_city:
             keyboard = create_action_keyboard(user_gender)
-            write_msg(user_id, f"Вы выбрали город из профиля: {user_city}.", keyboard=keyboard)
+            write_msg(user_id, f"Вы выбрали город из профиля: "
+                               f"{user_city.title()}.", keyboard=keyboard)
         else:
-            write_msg(user_id, "Город не указан в вашем профиле. Введите город вручную:")
+            write_msg(user_id, "Город не указан в вашем профиле.\nВведите "
+                               "город вручную:")
             #DB
             db.set_state_user(user_id, "waiting_for_city")
             # user_states[user_id] = "waiting_for_city"
@@ -204,7 +208,9 @@ def process_city_input(user_id, city_name):
         db.set_state_user(user_id, "waiting_for_age_from")
         # user_states[user_id] = "waiting_for_age_from"  # Ожидание ввода
         # начального возраста
-        write_msg(user_id, f"Вы выбрали город: {city_name}. Теперь введите начальный возраст:")
+        write_msg(user_id, f"Вы выбрали город: {city_name.title()}.\nТеперь "
+                           f"введите "
+                           f"начальный возраст:")
 
 
 
@@ -213,7 +219,9 @@ def create_confirm_city_keyboard(city_name):
     keyboard = {
         "one_time": True,
         "buttons": [
-            [{"action": {"type": "text", "label": f"Подтвердить {city_name}"}, "color": "positive"}],
+            [{"action": {"type": "text", "label": f"Подтвердить "
+                                                  f"{city_name.title()}"},
+              "color": "positive"}],
             [{"action": {"type": "text", "label": "Ввести другой город"}, "color": "default"}],
             [{"action": {"type": "text", "label": "◀️ Вернуться к выбору города"}, "color": "default"}]
         ]
@@ -225,10 +233,16 @@ def create_confirm_city_keyboard(city_name):
 def process_confirm_city(user_id, city_name):
     if city_name.startswith("Подтвердить"):
         city = city_name[11:]
-        user_states[user_id] = "waiting_for_age"
-        write_msg(user_id, f"Вы выбрали город: {city}. Теперь введите желаемый возраст:")
+        #DB
+        db.set_state_user(user_id, "waiting_for_age")
+        # user_states[user_id] = "waiting_for_age"
+        write_msg(user_id, f"Вы выбрали город: {city.title()}.\nТеперь "
+                           f"введите желаемый возраст:")
     elif city_name == "Ввести другой город":
-        user_states[user_id] = "waiting_for_city"  # Изменено состояние на ожидание ввода города
+        #DB
+        db.set_state_user(user_id, "waiting_for_city")
+        # user_states[user_id] = "waiting_for_city"  # Изменено состояние на
+        # ожидание ввода города
         write_msg(user_id, "Введите город:")
         
 
@@ -237,8 +251,12 @@ def process_age(user_id, age):
     try:
         age = int(age)
         if 0 <= age <= 150:  # Проверка на разумный диапазон возраста
-            write_msg(user_id, f"Вы ввели возраст: {age}. Можете ввести другой город или продолжить поиск.")
-            user_states[user_id] = "waiting_for_city"  # Вернуться в состояние ожидания ввода города
+            write_msg(user_id, f"Вы ввели возраст: {age}.\nМожете ввести "
+                               f"другой город или продолжить поиск.")
+            #DB
+            db.set_state_user(user_id, "waiting_for_city")
+            # user_states[user_id] = "waiting_for_city"  # Вернуться в
+            # состояние ожидания ввода города
         else:
             write_msg(user_id, "Введите корректный возраст (от 0 до 150).")
     except ValueError:
@@ -254,7 +272,9 @@ def process_age_from(user_id, age_from):
             db.set_state_user(user_id, "waiting_for_age_to")
             # user_states[user_id] = "waiting_for_age_to"  # Ожидание ввода
             # конечного возраста
-            write_msg(user_id, f"Вы ввели начальный возраст: {age_from}. Теперь введите конечный возраст:")
+            write_msg(user_id, f"Вы ввели начальный возраст: "
+                               f"{age_from}.\nТеперь введите конечный "
+                               f"возраст:")
         else:
             write_msg(user_id, "Введите корректный возраст (от 0 до 150).")
     except ValueError:
@@ -269,7 +289,8 @@ def process_age_to(user_id, age_to):
         db.set_state_user(user_id, "waiting_for_search_or_city")
         # user_states[user_id] = "waiting_for_search_or_city"  # Обновляем
         # состояние для выбора действия
-        write_msg(user_id, f"Вы ввели конечный возраст: {age_to}. Можете ввести другой город или продолжить поиск.", keyboard=create_search_or_city_keyboard())
+        write_msg(user_id, f"Вы ввели конечный возраст: {age_to}.\nМожете "
+                           f"ввести другой город или продолжить поиск.", keyboard=create_search_or_city_keyboard())
     except ValueError:
         write_msg(user_id, "Некорректный ввод. Пожалуйста, введите число.") 
         
