@@ -113,9 +113,9 @@ class DataBase:
             None.
         """
         self.session.add(ViewData(
-                vk_id=self_id,
-                viewed_vk_id=user_id,
-                status_id=1,
+            vk_id=self_id,
+            viewed_vk_id=user_id,
+            status_id=1,
         )
         )
         self.session.commit()
@@ -135,9 +135,9 @@ class DataBase:
             None.
         """
         self.session.add(ViewData(
-                vk_id=self_id,
-                viewed_vk_id=user_id,
-                status_id=2,
+            vk_id=self_id,
+            viewed_vk_id=user_id,
+            status_id=2,
         )
         )
         self.session.commit()
@@ -158,8 +158,8 @@ class DataBase:
             None
         """
         obj = self.session.query(ViewData).filter_by(
-                vk_id=self_id,
-                viewed_vk_id=user_id,
+            vk_id=self_id,
+            viewed_vk_id=user_id,
         ).first()
         # Если статус отличается, то меняем, если нет, ничего не делаем
         if obj.status_id != new_status_id:
@@ -180,8 +180,8 @@ class DataBase:
         """
         return_list = []
         query = self.session.query(ViewData).filter_by(
-                vk_id=self_id,
-                status_id=1
+            vk_id=self_id,
+            status_id=1
         ).all()
 
         for item in query:
@@ -208,8 +208,8 @@ class DataBase:
         """
         return_list = []
         query = self.session.query(ViewData).filter_by(
-                vk_id=self_id,
-                status_id=2
+            vk_id=self_id,
+            status_id=2
         ).all()
         for item in query:
             result_dict = {
@@ -231,8 +231,8 @@ class DataBase:
             bool: "True" если пользователь был просмотрен ранее, иначе "False"
         """
         query = self.session.query(ViewData).filter_by(
-                vk_id=self_id,
-                viewed_vk_id=user_id,
+            vk_id=self_id,
+            viewed_vk_id=user_id,
         ).first()
 
         return bool(query)
@@ -265,12 +265,14 @@ class DataBase:
                 age_to=age_to,
             ))
         else:
-            self.session.query(Search).filter_by(vk_id=self_id).update({
-                "sex": sex,
-                "city": city,
-                "age_from": age_from,
-                "age_to": age_to,
-            })
+            if sex is not None:
+                user.sex = sex
+            if city is not None:
+                user.city = city
+            if age_from is not None:
+                user.age_from = age_from
+            if age_to is not None:
+                user.age_to = age_to
 
         self.session.commit()
 
@@ -290,7 +292,7 @@ class DataBase:
 
         """
         query = self.session.query(Search).filter_by(
-                vk_id=self_id,
+            vk_id=self_id,
         ).first()
 
         if query is None:
