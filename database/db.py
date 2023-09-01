@@ -4,8 +4,10 @@ from database.models import Base
 from database.models import User, Status, ViewData, Search
 from dotenv import load_dotenv
 import os
+from typing import Dict, Any
 
 load_dotenv()
+
 
 class DataBase:
 
@@ -18,36 +20,6 @@ class DataBase:
         self.Session = sessionmaker(bind=self.engine)
         # Создание объекта сессии, для работы с данными в базе
         self.session = self.Session()
-        self.user_search_indexes = {}  # Словарь для хранения индексов поиска пользователей
-    def set_search_results(self, user_id, results):
-        user = self.session.query(Search).filter_by(vk_id=user_id).first()
-        if user:
-            user.results = results
-        else:
-            new_user = Search(vk_id=user_id, results=results)
-            self.session.add(new_user)
-        self.session.commit()
-    def get_search_results(self, user_id):
-        user = self.session.query(Search).filter_by(vk_id=user_id).first()
-        if user:
-            return user.results
-        else:
-            return []
-
-
-
-    def set_user_search_index(self, user_id, index):
-            """
-            Установить индекс поиска для пользователя.
-
-            Args:
-                user_id: ID пользователя.
-                index: Новый индекс для пользователя.
-
-            Returns:
-                None.
-            """
-            self.user_search_indexes[user_id] = index
 
     def create_tables(self):
         """
@@ -270,7 +242,9 @@ class DataBase:
                    sex: str = None,
                    city: str = None,
                    age_from: int = None,
-                   age_to: int = None
+                   age_to: int = None,
+                   results: Dict[str, Any] = None,
+                   results_index: int = 0,
                    ) -> None:
         """
         Записать параметры поиска.
@@ -281,6 +255,8 @@ class DataBase:
             city: Город.
             age_from: Нижняя граница возраста.
             age_to: Верхняя граница возраста.
+            results: Результаты поиска.
+            results_index: Индекс поиска.
         Returns:
             None
         """
@@ -292,6 +268,8 @@ class DataBase:
                 city=city,
                 age_from=age_from,
                 age_to=age_to,
+                results=results,
+                results_index=results_index,
             ))
         else:
             if sex is not None:
@@ -302,6 +280,10 @@ class DataBase:
                 user.age_from = age_from
             if age_to is not None:
                 user.age_to = age_to
+            if results is not None:
+                user.results = results
+            if results_index is not None:
+                user.results_index = results_index
 
         self.session.commit()
 
@@ -333,4 +315,55 @@ class DataBase:
             "age_from": query.age_from,
             "age_to": query.age_to,
         }
-        return result_dict 
+        return result_dict
+
+    def get_search_index(self, self_id: int) -> int:
+        """
+        Получить индекс поиска.
+
+        Args:
+            self_id: ID пользователя.
+
+        Returns:
+            int: Индекс поиска.
+        """
+        query = self.session.query(Search.results_index).filter_by(
+            vk_id=self_id,
+        ).scalar()
+
+        return query or 0
+
+    def set_search_index(self, self_id: int, new_index: int) -> None:
+        """
+        Изменить индекс поиска для пользователя.
+
+        Args:
+            user_id: ID пользователя.
+            new_index: Новый индекс для пользователя.
+
+        Returns:
+            None.
+        """
+        query = self.session.query(Search).filter_by(
+            vk_id=self_id,
+        ).first()
+
+        if query:
+            query.results_index = new_index
+            self.session.commit()
+
+    def get_search_results(self, self_id: int) -> dict:
+        """
+        Получить результаты поиска.
+
+        Args:
+            self_id: ID пользователя.
+
+        Returns:
+            dict: Словарь результатов поиска.
+        """
+        query = self.session.query(Search.results).filter_by(
+            vk_id=self_id,
+        ).scalar()
+
+        return query or {}

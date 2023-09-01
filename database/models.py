@@ -23,7 +23,8 @@ class Search(Base):
     age_to = sq.Column(sq.Integer, default=None)
     sex = sq.Column(sq.Text, default=None)
     city = sq.Column(sq.Text, default=None)
-    results = sq.Column(sq.Text, default=None)
+    results = sq.Column(sq.JSON, default=None)
+    results_index = sq.Column(sq.Integer, default=0)
 
 
 class Status(Base):

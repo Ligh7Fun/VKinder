@@ -333,6 +333,7 @@ def process_age_to(user_id, age_to):
                   f"Начальный возраст: {data_for_search['age_from']}\n"
                   f"Конечный возраст: {data_for_search['age_to']}",
                   keyboard=create_search_or_city_keyboard())
+        db.set_state_user(user_id, "ready")
     except ValueError:
         write_msg(user_id, "Некорректный ввод. Пожалуйста, введите число.")
 
@@ -364,14 +365,17 @@ def get_city_id(city_name: str) -> int:
 
 # Функция для получения топ-фотографий пользователя
 def get_top_photos(user_id) -> list:
-    photos_response = vk_user.photos.get(
-        owner_id=user_id, album_id='profile', extended=1)
-    photos = photos_response['items']
-    photos_sorted = sorted(
-        photos, key=lambda x: x['likes']['count'], reverse=True)
-    top_photos = photos_sorted[:3]
-    photo_urls = [photo['sizes'][-1]['url']
-                  for photo in top_photos]
+    try:
+        photos_response = vk_user.photos.get(
+            owner_id=user_id, album_id='profile', extended=1)
+        photos = photos_response['items']
+        photos_sorted = sorted(
+            photos, key=lambda x: x['likes']['count'], reverse=True)
+        top_photos = photos_sorted[:3]
+        photo_urls = [photo['sizes'][-1]['url']
+                      for photo in top_photos]
+    except Exception as e:
+        print("Error getting top photos:", str(e))
     return photo_urls
 
 
@@ -394,43 +398,50 @@ def process_search(user_id):
     sex = '1' if data['sex'].lower() == 'женщину' else '2'
     print('city id: ', get_city_id(data['city']))
     search_results = vk_user.users.search(count=count,
-                                           sex=sex,
-                                           city=get_city_id(data['city']),
-                                           age_from=str(data['age_from']),
-                                           age_to=str(data['age_to']),
-                                           has_photo='1',
-                                           status='6',
-                                           sort=0,
-                                           fields="city, bdate, sex")
+                                          sex=sex,
+                                          city=get_city_id(data['city']),
+                                          age_from=str(data['age_from']),
+                                          age_to=str(data['age_to']),
+                                          has_photo='1',
+                                          status='6',
+                                          sort=0,
+                                          fields="city, bdate, sex")
     print(len(search_results['items']))
-
+    print()
+    print(search_results['items'][0])
+    print()
     # Сохраняем результаты поиска в базе данных
-    db.set_search_results(user_id, search_results['items'])
+    db.set_search(self_id=user_id, results=search_results['items'])
 
     # Устанавливаем состояние пользователя для показа профилей
-    db.set_state_user(user_id, "showing_profiles")
-    db.set_user_search_index(user_id, 0)  # Устанавливаем начальный индекс на 0
-    
+    db.set_state_user(self_id=user_id, state="showing_profiles")
+    # Устанавливаем начальный индекс на 0
+    db.set_search_index(self_id=user_id, new_index=0)
+
     # Отображаем первый профиль
     display_profile(user_id)
 
+
 def display_profile(user_id):
-    search_results = db.get_search_results(user_id)
-    index = db.get_user_search_index(user_id)
-    
+    search_results = db.get_search_results(self_id=user_id)
+    index = db.get_search_index(self_id=user_id)
+
     if index < len(search_results):
         profile = search_results[index]
         # Формируем сообщение с информацией о профиле
-        message = f"Имя: {profile['first_name']} {profile['last_name']}\nГород: {profile.get('city', 'N/A')}"
+        message = f"Имя: {profile['first_name']} {profile['last_name']}\nГород: {profile.get('title', 'N/A')}"
         # Получаем топ-фотографии профиля
         top_photos = get_top_photos(profile['id'])
         # Создаем встроенную клавиатуру с кнопками "лайка" и "дизлайка"
         keyboard = create_like_dislike_keyboard()
         # Отправляем сообщение с клавиатурой и изображениями
-        write_msg(user_id=user_id, message=message, keyboard=keyboard, image_urls=top_photos)
+        write_msg(user_id=user_id, message=message,
+                  keyboard=keyboard, image_urls=top_photos)
     else:
         # Больше профилей нет для отображения
-        write_msg(user_id=user_id, message="Больше профилей для отображения нет.")
+        write_msg(user_id=user_id,
+                  message="Больше профилей для отображения нет.")
+
 
 def create_like_dislike_keyboard():
     keyboard = {
@@ -442,21 +453,23 @@ def create_like_dislike_keyboard():
     }
     return json.dumps(keyboard, ensure_ascii=False)
 
+
 def process_like_dislike(user_id, choice):
-    search_results = db.get_search_results(user_id)
-    index = db.get_user_search_index(user_id)
-    
+    search_results = db.get_search_results(self_id=user_id)
+    index = db.get_search_index(self_id=user_id)
+
     if index < len(search_results):
         profile = search_results[index]
         if choice == "👍 Лайк":
             # Добавляем профиль в избранные
             add_to_favorites(user_id, profile)
         # Переходим к следующему профилю
-        db.set_user_search_index(user_id, index + 1)
+        db.set_search_index(self_id=user_id, new_index=index + 1)
         display_profile(user_id)
     else:
         # Больше профилей нет для отображения
-        write_msg(user_id=user_id, message="Больше профилей для отображения нет.")
+        write_msg(user_id=user_id,
+                  message="Больше профилей для отображения нет.")
 
 
 def main():
