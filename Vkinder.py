@@ -55,7 +55,6 @@ def write_msg(user_id: int,
         "color": "primary"
     }
     
-    # Добавьте кнопку "Показать избранное" в клавиатуру
     if keyboard:
         keyboard = json.loads(keyboard)
         keyboard["buttons"].append([show_favorites_button])
@@ -84,12 +83,12 @@ def show_favorites(user_id):
 
     if liked_list:
         for liked_user in liked_list:
-            # Получите профиль избранного пользователя по его ID
+           
             profile = db.get_user_profile(liked_user['viewedvkid'])
             if profile:
-                # Отобразите профиль пользователю
+                
                 message = f"ID пользователя: {profile['vk_id']}\nИмя: {profile['first_name']} {profile['last_name']}\nГород: {profile.get('city', 'N/A')}"
-                # Отправьте сообщение с профилем пользователю
+                
                 write_msg(user_id=user_id, message=message)
     else:
         write_msg(user_id=user_id, message="Список избранных пользователей пуст.") 
@@ -525,19 +524,19 @@ def create_like_dislike_keyboard():
     return json.dumps(keyboard, ensure_ascii=False)
 
 def view_favorites(user_id, favorites):
-    # Получите список избранных пользователей из базы данных
+   
     user_favorites = favorites.get(user_id, [])
 
     if not user_favorites:
         write_msg(user_id, "Список избранных пользователей пуст.")
         return
 
-    # Форматируйте список избранных пользователей для отправки
+ 
     favorites_message = "Список избранных пользователей:\n"
     for favorite in user_favorites:
         favorites_message += f"{favorite}\n"
 
-    # Отправьте список пользователю
+ 
     write_msg(user_id, favorites_message)
 
 
@@ -604,9 +603,9 @@ def main():
             elif request == "пока":
                 write_msg(user_id, "До свидания!")
             elif request == "избранные":
-                view_favorites(user_id, favorites)  # Вызываем функцию для просмотра избранных пользователей
+                view_favorites(user_id, favorites)  
             elif request.lower() == "показать избранное":
-                view_favorites(user_id, favorites)  # Вызываем функцию для просмотра избранных пользователей
+                view_favorites(user_id, favorites)  
             else:
                 user_state_db = db.get_state_user(user_id)
 
