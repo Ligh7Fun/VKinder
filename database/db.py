@@ -100,7 +100,9 @@ class DataBase:
         self.session.commit()
 
     def add_like(self, self_id: int,
-                 user_id: int
+                 user_id: int,
+                 first_name: str,
+                 last_name: str,
                  ) -> None:
         """
         Добавить предложенного пользователя в список
@@ -117,12 +119,16 @@ class DataBase:
             vk_id=self_id,
             viewed_vk_id=user_id,
             status_id=1,
+            first_name=first_name,
+            last_name=last_name,
         )
         )
         self.session.commit()
 
     def add_dislike(self, self_id: int,
                     user_id: int,
+                    first_name: str,
+                    last_name: str,
                     ) -> None:
         """
         Добавить предложенного пользователя в список
@@ -139,6 +145,8 @@ class DataBase:
             vk_id=self_id,
             viewed_vk_id=user_id,
             status_id=2,
+            first_name=first_name,
+            last_name=last_name,
         )
         )
         self.session.commit()
@@ -190,6 +198,8 @@ class DataBase:
                 "vk_id": item.vk_id,
                 "viewed_vk_id": item.viewed_vk_id,
                 "status_id": item.status_id,
+                "first_name": item.first_name,
+                "last_name": item.last_name,
             }
             return_list.append(result_dict)
 
@@ -217,6 +227,8 @@ class DataBase:
                 "vk_id": item.vk_id,
                 "viewed_vk_id": item.viewed_vk_id,
                 "status_id": item.status_id,
+                "first_name": item.first_name,
+                "last_name": item.last_name,
             }
             return_list.append(result_dict)
 

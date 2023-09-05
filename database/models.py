@@ -41,3 +41,5 @@ class ViewData(Base):
     vk_id = sq.Column(sq.Integer, sq.ForeignKey('user.vk_id'))
     viewed_vk_id = sq.Column(sq.Integer)
     status_id = sq.Column(sq.Integer, sq.ForeignKey('status.id'))
+    first_name = sq.Column(sq.Text, default=None)
+    last_name = sq.Column(sq.Text, default=None)
