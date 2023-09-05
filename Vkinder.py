@@ -3,7 +3,9 @@ import vk_api
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.bot_longpoll import VkBotEventType, VkBotLongPoll
-
+import requests
+from io import BytesIO
+from vk_api.upload import VkUpload
 import random
 import logging
 import json
@@ -36,6 +38,18 @@ def search_users(age_from, age_to, sex, city, status):
     return users
 
 
+def upload_photo(url):
+    img = requests.get(url).content
+    f = BytesIO(img)  # Переводим в байты изображение
+
+    response = upload.photo_messages(f)[0]  # Загружаем на сервер
+    profile_id = response['owner_id']
+    photo_id = response['id']
+    access_key = response['access_key']
+
+    return f'photo{profile_id}_{photo_id}_{access_key}'
+
+
 # Функция для отправки сообщения с возможной клавиатурой
 def write_msg(user_id: int,
               message: str,
@@ -53,30 +67,14 @@ def write_msg(user_id: int,
             {
                 'user_id': user_id,
                 'message': message,
-                'random_id': 0,
+                'random_id': random.randint(1, 10 ** 9),
                 'keyboard': keyboard,
                 'attachment': attachment,
             }
     )
 
 
-# def write_msg(user_id, message, keyboard=None, image_urls=None):
-#     attachments = []
-#     if image_urls:
-#         for image_url in image_urls:
-#             attachments.append(image_url)
-
-#     vk.messages.send(
-#         user_id=user_id,
-#         message=message,
-#         attachment=','.join(attachments) if image_urls is not None else None,
-#         keyboard=keyboard if keyboard is not None else None,
-#         random_id=random.randint(1, 10 ** 9)
-#     )
-
 # Функция для обработки выбора действия
-
-
 def process_action(user_id, action):
     print("Processing action selection for user", user_id)
     print("Received action:", action)
@@ -261,8 +259,8 @@ def process_city_input(user_id, city_name):
                       )
 
         else:
-            write_msg(user_id, "Город не указан в вашем профиле.\nВведите "
-                               "город вручную:"
+            write_msg(user_id, "Город не указан в вашем профиле.\n"
+                               "Введите город вручную:"
                       )
             # DB
             db.set_state_user(user_id, "waiting_for_city")
@@ -273,9 +271,8 @@ def process_city_input(user_id, city_name):
         # user_states[user_id] = "waiting_for_age_from"  # Ожидание ввода
         # начального возраста
         db.set_search(self_id=user_id, city=city_name)
-        write_msg(user_id, f"Вы выбрали город: {city_name.title()}.\nТеперь "
-                           f"введите "
-                           f"начальный возраст:"
+        write_msg(user_id, f"Вы выбрали город: {city_name.title()}.\n"
+                           f"Теперь введите начальный возраст:"
                   )
 
 
@@ -303,8 +300,8 @@ def process_confirm_city(user_id, city_name):
         # user_states[user_id] = "waiting_for_age"
         db.set_search(self_id=user_id, city=city)
         print('city: ', city, 'user: ', user_id)
-        write_msg(user_id, f"Вы выбрали город: {city.title()}.\nТеперь "
-                           f"введите желаемый возраст:"
+        write_msg(user_id, f"Вы выбрали город: {city.title()}.\nТеперь"
+                           f" введите желаемый возраст:"
                   )
     elif city_name == "Ввести другой город":
         # DB
@@ -319,17 +316,22 @@ def process_age(user_id, age):
     try:
         age = int(age)
         if 0 <= age <= 150:  # Проверка на разумный диапазон возраста
-            write_msg(user_id, f"Вы ввели возраст: {age}.\nМожете ввести "
-                               f"другой город или продолжить поиск."
+            write_msg(user_id,
+                      f"Вы ввели возраст: {age}.\nМожете ввести "
+                      f"другой город или продолжить поиск."
                       )
             # DB
             db.set_state_user(user_id, "waiting_for_city")
             # user_states[user_id] = "waiting_for_city"  # Вернуться в
             # состояние ожидания ввода города
         else:
-            write_msg(user_id, "Введите корректный возраст (от 0 до 150).")
+            write_msg(user_id,
+                      "Введите корректный возраст (от 0 до 150)."
+                      )
     except ValueError:
-        write_msg(user_id, "Введите числовой возраст (от 0 до 150).")
+        write_msg(user_id,
+                  "Введите числовой возраст (от 0 до 150)."
+                  )
 
 
 def process_age_from(user_id, age_from):
@@ -349,9 +351,13 @@ def process_age_from(user_id, age_from):
                       )
 
         else:
-            write_msg(user_id, "Введите корректный возраст (от 0 до 150).")
+            write_msg(user_id,
+                      "Введите корректный возраст (от 0 до 150)."
+                      )
     except ValueError:
-        write_msg(user_id, "Введите числовой возраст (от 0 до 150).")
+        write_msg(user_id,
+                  "Введите числовой возраст (от 0 до 150)."
+                  )
 
 
 def process_age_to(user_id, age_to):
@@ -366,18 +372,19 @@ def process_age_to(user_id, age_to):
 
         data_for_search = db.get_search(self_id=user_id)
         print(data_for_search)
-        # write_msg(user_id, f"Вы ввели конечный возраст: {age_to}.\nМожете "
-        #                    f"ввести другой город или продолжить поиск.", keyboard=create_search_or_city_keyboard())
+
         write_msg(user_id, f"Вы ввели следующие данные:\n"
                            f"Пол: {data_for_search['sex']}\n"
                            f"Город: {data_for_search['city'].title()}\n"
-                           f"Начальный возраст: {data_for_search['age_from']}\n"
-                           f"Конечный возраст: {data_for_search['age_to']}",
+                           f"Начальный возраст: {data_for_search['age_from']}"
+                           f"\nКонечный возраст: {data_for_search['age_to']}",
                   keyboard=create_search_or_city_keyboard()
                   )
         db.set_state_user(user_id, "showing_profiles")
     except ValueError:
-        write_msg(user_id, "Некорректный ввод. Пожалуйста, введите число.")
+        write_msg(user_id, "Некорректный ввод. "
+                           "Пожалуйста, введите число."
+                  )
 
 
 def create_search_or_city_keyboard():
@@ -413,7 +420,7 @@ def add_to_favorites(user_id, profile):
     write_msg(user_id, "Пользователь добавлен в избранные.")
 
 
-def get_city_id(city_name: str) -> int:
+def get_city_id(city_name: str) -> int | None:
     response = vk_user.database.getCities(country_id=1, q=city_name)
     if response['count'] > 0:
         city = response['items'][0]
@@ -423,7 +430,7 @@ def get_city_id(city_name: str) -> int:
 
 
 # Функция для получения топ-фотографий пользователя
-def get_top_photos(self_id, profile_id) -> list:
+def get_top_photos(profile_id: int) -> list:
     try:
         photos_response = vk_user.photos.get(
                 owner_id=profile_id, album_id='profile', extended=1
@@ -490,7 +497,6 @@ def process_search(user_id: int) -> None:
     display_profile(user_id=user_id)
 
 
-
 def display_profile(user_id: int):
     search_results = db.get_search_results(self_id=user_id)
     index = db.get_search_index(self_id=user_id)
@@ -499,19 +505,25 @@ def display_profile(user_id: int):
         profile = search_results[index]
         url = "https://vk.com/id" + str(profile['id'])
         # Формируем сообщение с информацией о профиле
-        message = f"Имя: {profile['first_name']} {profile['last_name']}\nГород: {profile.get('city', {}).get('title', 'N/A')}\nСсылка на профиль: {url}"
+        message = (f"Имя: {profile['first_name']} "
+                   f"{profile['last_name']}\n "
+                   f"Возраст: {calculate_age(profile['bdate'])}\n"
+                   f"Город: {profile.get('city', {}).get('title', 'N/A')}\n"
+                   f"Ссылка на профиль: {url}")
         # Получаем топ-фотографии профиля
-        top_photos = get_top_photos(self_id=user_id, profile_id=profile['id'])
+        top_photos = get_top_photos(profile_id=profile['id'])
         print("*** top_photos ***:", top_photos)
 
-        if top_photos is None:
+        if not top_photos:
             message += "\nНет фотографий или профиль закрыт"
 
         # Создаем встроенную клавиатуру с кнопками "лайка" и "дизлайка"
         keyboard = create_like_dislike_keyboard()
         # Отправляем сообщение с клавиатурой и изображениями
-        write_msg(user_id=user_id, message=message,
-                  keyboard=keyboard, image_urls=top_photos
+        write_msg(user_id=user_id,
+                  message=message,
+                  keyboard=keyboard,
+                  image_urls=[upload_photo(photo) for photo in top_photos]
                   )
     else:
         # Больше профилей нет для отображения
@@ -576,7 +588,8 @@ def main():
                     process_age_from(user_id, request)
                 elif user_state_db == "waiting_for_age_to":
                     process_age_to(user_id, request)
-                elif request == "изменить настройки" and user_state_db == "showing_profiles":
+                elif request == "изменить настройки" \
+                        and user_state_db == "showing_profiles":
                     db.set_state_user(user_id, "waiting_for_city")
                     start_conversation(user_id)
                 elif user_state_db == "showing_profiles":
@@ -600,7 +613,10 @@ def main():
                         first_name = search_results[index]["first_name"]
                         last_name = search_results[index]["last_name"]
                         if not db.is_viewed(self_id=user_id, user_id=profile):
-                            db.add_like(self_id=user_id, user_id=profile, first_name=first_name, last_name=last_name)
+                            db.add_like(self_id=user_id, user_id=profile,
+                                        first_name=first_name,
+                                        last_name=last_name
+                                        )
                         db.set_search_index(self_id=user_id,
                                             new_index=index + 1
                                             )
@@ -614,7 +630,10 @@ def main():
                         first_name = search_results[index]["first_name"]
                         last_name = search_results[index]["last_name"]
                         if not db.is_viewed(self_id=user_id, user_id=profile):
-                            db.add_dislike(self_id=user_id, user_id=profile, first_name=first_name, last_name=last_name)
+                            db.add_dislike(self_id=user_id, user_id=profile,
+                                           first_name=first_name,
+                                           last_name=last_name
+                                           )
                         db.set_search_index(self_id=user_id,
                                             new_index=index + 1
                                             )
@@ -622,18 +641,23 @@ def main():
 
                     elif request == "избранное":
                         write_msg(user_id,
-                                  f"Ваш список избранных пользователей",
+                                  f"Список избранных пользователей",
                                   keyboard=create_menu_keyboard()
                                   )
                         req_like = db.request_liked_list(self_id=user_id)
                         print(req_like)
 
-                        url = "http://vk.com/id"
-                        req_list = "\n".join([f"{item['first_name']} {item['last_name']} {url}{item['viewed_vk_id']}" for item in req_like])
+                        url = "https://vk.com/id"
+                        req_list = "\n".join([
+                            f"{item['first_name']} {item['last_name']} "
+                            f"{url}{item['viewed_vk_id']}"
+                            for item in req_like]
+                        )
                         write_msg(user_id, req_list)
                 else:
                     write_msg(user_id,
-                              f"Вы ранее уже заполнили профиль, выберите действие.",
+                              f"Вы ранее уже заполнили профиль, "
+                              f"выберите действие.",
                               keyboard=create_search_or_city_keyboard()
                               )
 
@@ -659,7 +683,7 @@ if __name__ == "__main__":
     # Инициализация LongPoll
     # longpoll = VkLongPoll(vk_session)
     longpoll = VkBotLongPoll(vk_session, group_id='222099959')
-
+    upload = VkUpload(vk_session)
     # Запуск бота
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s'
