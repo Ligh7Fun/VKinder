@@ -15,8 +15,6 @@ def create_action_keyboard() -> str:
     return json.dumps(keyboard, ensure_ascii=False)
 
 
-
-
 def create_confirm_city_keyboard(city_name: str) -> str:
     keyboard = {
         "one_time": True,

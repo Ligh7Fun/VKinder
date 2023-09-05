@@ -1,7 +1,6 @@
 import sqlalchemy as sq
 from sqlalchemy.orm import declarative_base
 
-
 # Создание базового класса для моделей SQLAlchemy
 Base = declarative_base()
 
