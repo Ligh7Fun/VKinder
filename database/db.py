@@ -1,21 +1,22 @@
+from typing import Dict, Any
+
+from dotenv import load_dotenv
 from sqlalchemy.orm import sessionmaker
 import sqlalchemy as sq
+
 from database.models import Base
 from database.models import User, Status, ViewData, Search
-from dotenv import load_dotenv
-import os
-from typing import Dict, Any
 
 load_dotenv()
 
 
-class DataBase:
+class Database:
 
-    def __init__(self):
+    def __init__(self, dsn: str) -> None:
         # Базовый класс для моделей SQLAlchemy
         self.Base = Base
         # Создание объекта Engine для взаимодействия с базой данных
-        self.engine = sq.create_engine(os.getenv('DSN'))
+        self.engine = sq.create_engine(dsn)
         # Создание класса сессии для работы с базой данных
         self.Session = sessionmaker(bind=self.engine)
         # Создание объекта сессии, для работы с данными в базе
@@ -116,11 +117,11 @@ class DataBase:
             None.
         """
         self.session.add(ViewData(
-            vk_id=self_id,
-            viewed_vk_id=user_id,
-            status_id=1,
-            first_name=first_name,
-            last_name=last_name,
+                vk_id=self_id,
+                viewed_vk_id=user_id,
+                status_id=1,
+                first_name=first_name,
+                last_name=last_name,
         )
         )
         self.session.commit()
@@ -142,11 +143,11 @@ class DataBase:
             None.
         """
         self.session.add(ViewData(
-            vk_id=self_id,
-            viewed_vk_id=user_id,
-            status_id=2,
-            first_name=first_name,
-            last_name=last_name,
+                vk_id=self_id,
+                viewed_vk_id=user_id,
+                status_id=2,
+                first_name=first_name,
+                last_name=last_name,
         )
         )
         self.session.commit()
@@ -167,8 +168,8 @@ class DataBase:
             None
         """
         obj = self.session.query(ViewData).filter_by(
-            vk_id=self_id,
-            viewed_vk_id=user_id,
+                vk_id=self_id,
+                viewed_vk_id=user_id,
         ).first()
         # Если статус отличается, то меняем, если нет, ничего не делаем
         if obj.status_id != new_status_id:
@@ -189,8 +190,8 @@ class DataBase:
         """
         return_list = []
         query = self.session.query(ViewData).filter_by(
-            vk_id=self_id,
-            status_id=1
+                vk_id=self_id,
+                status_id=1
         ).all()
 
         for item in query:
@@ -219,8 +220,8 @@ class DataBase:
         """
         return_list = []
         query = self.session.query(ViewData).filter_by(
-            vk_id=self_id,
-            status_id=2
+                vk_id=self_id,
+                status_id=2
         ).all()
         for item in query:
             result_dict = {
@@ -244,8 +245,8 @@ class DataBase:
             bool: "True" если пользователь был просмотрен ранее, иначе "False"
         """
         query = self.session.query(ViewData).filter_by(
-            vk_id=self_id,
-            viewed_vk_id=user_id,
+                vk_id=self_id,
+                viewed_vk_id=user_id,
         ).first()
 
         return bool(query)
@@ -275,14 +276,15 @@ class DataBase:
         user = self.session.query(Search).filter_by(vk_id=self_id).first()
         if not user:
             self.session.add(Search(
-                vk_id=self_id,
-                sex=sex,
-                city=city,
-                age_from=age_from,
-                age_to=age_to,
-                results=results,
-                results_index=results_index,
-            ))
+                    vk_id=self_id,
+                    sex=sex,
+                    city=city,
+                    age_from=age_from,
+                    age_to=age_to,
+                    results=results,
+                    results_index=results_index,
+            )
+            )
         else:
             if sex is not None:
                 user.sex = sex
@@ -315,7 +317,7 @@ class DataBase:
 
         """
         query = self.session.query(Search).filter_by(
-            vk_id=self_id,
+                vk_id=self_id,
         ).first()
 
         if query is None:
@@ -340,7 +342,7 @@ class DataBase:
             int: Индекс поиска.
         """
         query = self.session.query(Search.results_index).filter_by(
-            vk_id=self_id,
+                vk_id=self_id,
         ).scalar()
 
         return query or 0
@@ -357,7 +359,7 @@ class DataBase:
             None.
         """
         query = self.session.query(Search).filter_by(
-            vk_id=self_id,
+                vk_id=self_id,
         ).first()
 
         if query:
@@ -375,7 +377,7 @@ class DataBase:
             dict: Словарь результатов поиска.
         """
         query = self.session.query(Search.results).filter_by(
-            vk_id=self_id,
+                vk_id=self_id,
         ).scalar()
 
         return query or {}

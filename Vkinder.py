@@ -1,44 +1,32 @@
 from datetime import datetime
-import vk_api
-from vk_api.keyboard import VkKeyboard, VkKeyboardColor
-from vk_api.longpoll import VkLongPoll, VkEventType
-from vk_api.bot_longpoll import VkBotEventType, VkBotLongPoll
-import requests
 from io import BytesIO
-from vk_api.upload import VkUpload
 import random
 import logging
-import json
 import re
 import os
-from dotenv import load_dotenv
-from database.db import DataBase
-from time import sleep
-from threading import Thread
 
-user_gender = None  # Переменная для хранения пола пользователя
-favorites = {}  # Пустой словарь для хранения избранных пользователей
+from dotenv import load_dotenv
+from vk_api.bot_longpoll import VkBotEventType, VkBotLongPoll
+from vk_api.upload import VkUpload
+import vk_api
+import requests
+
+from database.db import Database
+from keyboards.keyboards import (create_action_keyboard,
+                                 create_confirm_city_keyboard,
+                                 create_search_or_city_keyboard,
+                                 create_menu_keyboard,
+                                 create_like_dislike_keyboard,
+                                 create_start_conversation_keyboard,
+                                 )
+
 logging.basicConfig(filename='bot.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s'
                     )
 
 
 # Функция для поиска пользователей по заданным параметрам
-def search_users(age_from, age_to, sex, city, status):
-    search_params = {
-        'age_from': age_from,
-        'age_to': age_to,
-        'sex': sex,
-        'city': city,
-        'status': status,
-        'count': 10
-    }
-    response = vk.users.search(**search_params)
-    users = response['items']
-    return users
-
-
-def upload_photo(url):
+def upload_photo(url: str) -> str:
     img = requests.get(url).content
     f = BytesIO(img)  # Переводим в байты изображение
 
@@ -61,7 +49,7 @@ def write_msg(user_id: int,
         for image_url in image_urls:
             attachments.append(image_url)
     attachment = ','.join(attachments) if image_urls is not None else None
-    print('attachment: ', attachment)
+
     vk_session.method(
             'messages.send',
             {
@@ -75,7 +63,7 @@ def write_msg(user_id: int,
 
 
 # Функция для обработки выбора действия
-def process_action(user_id, action):
+def process_action(user_id: int, action: str) -> None:
     print("Processing action selection for user", user_id)
     print("Received action:", action)
     # Удаление цифр и точки из начала строки
@@ -84,154 +72,91 @@ def process_action(user_id, action):
     if action_text.lower() == "искать по городу из профиля":
         user_city = get_user_city(user_id)
         if user_city:
-            # DB
             db.set_state_user(user_id, "waiting_for_age_from")
             db.set_search(self_id=user_id, city=user_city)
             print('city: ', user_city, 'user: ', user_id)
-            # user_states[user_id] = "waiting_for_age_from"
             # Обновляем состояние для ввода возраста
             city_message = f"Город из вашего профиля: {user_city}."
             confirm_keyboard = create_confirm_city_keyboard(user_city)
             write_msg(user_id, city_message, keyboard=confirm_keyboard)
             return
         else:
-            # DB
             db.set_state_user(user_id, "waiting_for_city")
-            # user_states[user_id] = "waiting_for_city"
-            action_keyboard = create_action_keyboard(user_gender)
-            write_msg(user_id, "Город не указан в вашем профиле.\nВведите "
-                               "город вручную:", keyboard=action_keyboard
+            action_keyboard = create_action_keyboard()
+            write_msg(user_id, "Город не указан в вашем профиле.\n"
+                               "Введите город вручную:",
+                      keyboard=action_keyboard
                       )
     else:
-        # DB
         db.set_state_user(user_id, "waiting_for_city")
-        # user_states[user_id] = "waiting_for_city"
-        action_keyboard = create_action_keyboard(user_gender)
         write_msg(user_id, "Введите город для поиска:")
     print("Sent city input prompt to user", user_id)
 
 
-def process_confirm_change(user_id, choice):
+def process_confirm_change(user_id: int, choice: str) -> None:
     if choice.lower() == "да":
-        # DB
         db.set_state_user(user_id, "waiting_for_city")
-        # user_states[user_id] = "waiting_for_city"  # Вернуться к ожиданию
-        # ввода города
-        action_keyboard = create_action_keyboard(user_gender)
+        # Вернуться к ожиданию ввода города
+        action_keyboard = create_action_keyboard()
         write_msg(user_id, "Введите город для поиска:",
                   keyboard=action_keyboard
                   )
     elif choice.lower() == "нет":
-        # DB
         db.set_state_user(user_id, "waiting_for_action")
-        # user_states[user_id] = "waiting_for_action"  # Вернуться к выбору
-        # действия
-        action_keyboard = create_action_keyboard(user_gender)
-        write_msg(user_id, "Что вы хотите сделать?", keyboard=action_keyboard)
+        # Вернуться к выбору действия
+        action_keyboard = create_action_keyboard()
+        write_msg(user_id, "Что вы хотите сделать?",
+                  keyboard=action_keyboard
+                  )
     else:
         write_msg(user_id, "Пожалуйста, ответьте \"Да\" или \"Нет\".")
 
 
-# Словарь для хранения состояний пользователей
-user_states = {}
-
-
 # Функция для начала диалога с пользователем
-
-
-def start_conversation(user_id):
+def start_conversation(user_id: int) -> None:
     print("Starting conversation with user", user_id)
 
     # Отправка приветственного сообщения и клавиатуры для выбора пола
     message = ("Привет!\nЯ бот, который поможет вам найти интересных людей.\n"
                "Выберите пол, который вы ищете:")
 
-    # Создание клавиатуры с кнопками для выбора пола
-    keyboard = {
-        "one_time": True,
-        "buttons": [
-            [{"action": {"type": "text", "label": "Мужчину"},
-              "color": "positive"}],
-            [{"action": {"type": "text", "label": "Женщину"},
-              "color": "positive"}]
-        ]
-    }
-
-    keyboard = json.dumps(keyboard, ensure_ascii=False)
-
+    keyboard = create_start_conversation_keyboard()
     # Отправка сообщения с клавиатурой
-    write_msg(user_id, message, keyboard)
+    write_msg(user_id=user_id, message=message, keyboard=keyboard)
 
     # Установка состояния пользователя в "ожидание выбора пола"
-    # user_states[user_id] = "waiting_for_gender"
-    # DB
     db.set_state_user(user_id, "waiting_for_gender")
     print("DB State: ", db.get_state_user(user_id), "user_id:", user_id)
     print("Sent gender selection keyboard to user", user_id)
 
 
 # Функция для обработки выбора пола
-
-
-def process_gender(user_id, gender):
+def process_gender(user_id: int, gender: str) -> None:
     print("Processing gender selection for user", user_id)
 
     if gender.lower() == "мужчину" or gender.lower() == "женщину":
-        # DB
-
         print('gender: ', gender, 'user_id: ', user_id)
         db.set_search(self_id=user_id, sex=gender)
 
         # Создание клавиатуры с кнопками для выбора действия
-        action_keyboard = {
-            "one_time": True,
-            "buttons": [
-                [{"action": {"type": "text",
-                             "label": "1. Искать по городу из профиля"},
-                  "color": "default"}],
-                [{"action": {"type": "text",
-                             "label": "2. Ввести другой город"},
-                  "color": "default"}]
-            ]
-        }
+        keyboard = create_action_keyboard()
 
-        action_keyboard = json.dumps(action_keyboard, ensure_ascii=False)
-
-        write_msg(user_id, "Что вы хотите сделать?", keyboard=action_keyboard)
+        write_msg(user_id, "Что вы хотите сделать?",
+                  keyboard=keyboard
+                  )
         db.set_state_user(user_id, "waiting_for_action")
         print("Sent action selection keyboard to user", user_id)
     else:
         write_msg(
-                user_id,
-                "Не поняла вашего выбора. Пожалуйста, выберите пол из списка."
+                user_id=user_id,
+                message="Не поняла вашего выбора. "
+                        "Пожалуйста, выберите пол из списка."
         )
         print("Sent invalid gender response message to user", user_id)
 
 
-# Функция для создания клавиатуры для выбора действия
-
-
-def create_action_keyboard(gender):
-    buttons = [
-        [{"action": {"type": "text",
-                     "label": "1. Искать по городу из профиля"},
-          "color": "positive"}],
-        [{"action": {"type": "text", "label": "2. Ввести другой город"},
-          "color": "positive"}],
-    ]
-    if gender == "male":
-        buttons[0][0]["color"] = "blue"
-    elif gender == "female":
-        buttons[1][0]["color"] = "pink"
-    keyboard = {
-        "one_time": True,
-        "buttons": buttons
-    }
-    return json.dumps(keyboard, ensure_ascii=False)
-
-
 # Функция для получения города пользователя
-def get_user_city(user_id):
+def get_user_city(user_id: int) -> str | None:
     try:
         response = vk.users.get(user_ids=user_id, fields='city')
         city_info = response[0]['city']
@@ -246,13 +171,11 @@ def get_user_city(user_id):
 
 
 # Функция для обработки ввода города
-
-
-def process_city_input(user_id, city_name):
+def process_city_input(user_id: int, city_name: str) -> None:
     if city_name.lower() == "из профиля":
         user_city = get_user_city(user_id)
         if user_city:
-            keyboard = create_action_keyboard(user_gender)
+            keyboard = create_action_keyboard()
             db.set_search(self_id=user_id, city=user_city)
             write_msg(user_id, f"Вы выбрали город из профиля: "
                                f"{user_city.title()}.", keyboard=keyboard
@@ -276,28 +199,11 @@ def process_city_input(user_id, city_name):
                   )
 
 
-# Функция для создания клавиатуры подтверждения города
-def create_confirm_city_keyboard(city_name):
-    keyboard = {
-        "one_time": True,
-        "buttons": [
-            [{"action": {"type": "text", "label": f"Подтвердить "
-                                                  f"{city_name.title()}"},
-              "color": "positive"}],
-            [{"action": {"type": "text", "label": "Ввести другой город"},
-              "color": "default"}],
-        ]
-    }
-    return json.dumps(keyboard, ensure_ascii=False)
-
-
 # Функция для обработки подтверждения города
-def process_confirm_city(user_id, city_name):
+def process_confirm_city(user_id: int, city_name: str) -> None:
     if city_name.startswith("Подтвердить"):
         city = city_name[11:]
-        # DB
         db.set_state_user(user_id, "waiting_for_age")
-        # user_states[user_id] = "waiting_for_age"
         db.set_search(self_id=user_id, city=city)
         print('city: ', city, 'user: ', user_id)
         write_msg(user_id, f"Вы выбрали город: {city.title()}.\nТеперь"
@@ -306,12 +212,11 @@ def process_confirm_city(user_id, city_name):
     elif city_name == "Ввести другой город":
         # DB
         db.set_state_user(user_id, "waiting_for_city")
-        # user_states[user_id] = "waiting_for_city"  # Изменено состояние на
-        # ожидание ввода города
+        # Изменено состояние на ожидание ввода города
         write_msg(user_id, "Введите город:")
 
 
-def process_age(user_id, age):
+def process_age(user_id: int, age: int) -> None:
     print("Processing age input for user", user_id)
     try:
         age = int(age)
@@ -322,8 +227,7 @@ def process_age(user_id, age):
                       )
             # DB
             db.set_state_user(user_id, "waiting_for_city")
-            # user_states[user_id] = "waiting_for_city"  # Вернуться в
-            # состояние ожидания ввода города
+            # Вернуться в состояние ожидания ввода города
         else:
             write_msg(user_id,
                       "Введите корректный возраст (от 0 до 150)."
@@ -334,7 +238,7 @@ def process_age(user_id, age):
                   )
 
 
-def process_age_from(user_id, age_from):
+def process_age_from(user_id: int, age_from: int) -> None:
     print("Processing age from input for user", user_id)
     try:
         age_from = int(age_from)
@@ -360,7 +264,7 @@ def process_age_from(user_id, age_from):
                   )
 
 
-def process_age_to(user_id, age_to):
+def process_age_to(user_id: int, age_to: int) -> None:
     try:
         age_to = int(age_to)
         # DB
@@ -385,39 +289,6 @@ def process_age_to(user_id, age_to):
         write_msg(user_id, "Некорректный ввод. "
                            "Пожалуйста, введите число."
                   )
-
-
-def create_search_or_city_keyboard():
-    keyboard = {
-        "one_time": True,
-        "buttons": [
-            [{"action": {"type": "text", "label": "Изменить настройки"},
-              "color": "default"}],
-            [{"action": {"type": "text", "label": "Начать поиск"},
-              "color": "positive"}]
-        ]
-    }
-    return json.dumps(keyboard, ensure_ascii=False)
-
-
-def create_menu_keyboard():
-    keyboard = {
-        "one_time": True,
-        "buttons": [
-            [{"action": {"type": "text", "label": "Изменить настройки"},
-              "color": "default"}],
-            [{"action": {"type": "text", "label": "Продолжить"},
-              "color": "positive"},
-             {"action": {"type": "text", "label": "Избранное"},
-              "color": "positive"}]
-        ]
-    }
-    return json.dumps(keyboard, ensure_ascii=False)
-
-
-def add_to_favorites(user_id, profile):
-    favorites[user_id] = profile
-    write_msg(user_id, "Пользователь добавлен в избранные.")
 
 
 def get_city_id(city_name: str) -> int | None:
@@ -449,7 +320,7 @@ def get_top_photos(profile_id: int) -> list:
 
 
 # Считаем сколько лет
-def calculate_age(bdate):
+def calculate_age(bdate: str) -> int:
     bdate = datetime.strptime(bdate, '%d.%m.%Y')
     current_date = datetime.now()
     age = current_date.year - bdate.year
@@ -469,13 +340,14 @@ def process_search(user_id: int) -> None:
     print('city id: ', get_city_id(data['city']))
 
     search_results = vk_user.users.search(count=count,
+                                          country=1,  # Россия
                                           sex=sex,
                                           city=get_city_id(data['city']),
                                           age_from=str(data['age_from']),
                                           age_to=str(data['age_to']),
                                           has_photo='1',
                                           status='6',
-                                          sort=0,
+                                          sort=1,
                                           fields="city, bdate, sex"
                                           )
     print(len(search_results['items']))
@@ -532,20 +404,6 @@ def display_profile(user_id: int):
                   )
 
 
-def create_like_dislike_keyboard():
-    keyboard = {
-        "inline": True,
-        "buttons": [
-            [{"action": {"type": "text", "label": "👍 Лайк"},
-              "color": "positive"},
-             {"action": {"type": "text", "label": "Меню"}, "color": "default"},
-             {"action": {"type": "text", "label": "👎 Дизлайк"},
-              "color": "negative"}]
-        ]
-    }
-    return json.dumps(keyboard, ensure_ascii=False)
-
-
 def main():
     for event in longpoll.listen():
         if event.type == VkBotEventType.MESSAGE_NEW:
@@ -598,15 +456,11 @@ def main():
                         process_search(user_id)
                     elif request == "продолжить":
                         display_profile(user_id=user_id)
-                        # inner_go_work = Thread(
-                        #     target=go_work, args=(user_id, db.session))
-                        # inner_go_work.start()
                     elif request == "меню":
                         write_msg(user_id, f"Выберите действие.",
                                   keyboard=create_menu_keyboard()
                                   )
                     elif request == "👍 лайк":
-                        print("like")
                         search_results = db.get_search_results(self_id=user_id)
                         index = db.get_search_index(self_id=user_id)
                         profile = search_results[index]["id"]
@@ -623,7 +477,6 @@ def main():
                         display_profile(user_id=user_id)
 
                     elif request == "👎 дизлайк":
-                        print("dislike")
                         search_results = db.get_search_results(self_id=user_id)
                         index = db.get_search_index(self_id=user_id)
                         profile = search_results[index]["id"]
@@ -645,7 +498,6 @@ def main():
                                   keyboard=create_menu_keyboard()
                                   )
                         req_like = db.request_liked_list(self_id=user_id)
-                        print(req_like)
 
                         url = "https://vk.com/id"
                         req_list = "\n".join([
@@ -663,16 +515,22 @@ def main():
 
 
 if __name__ == "__main__":
-    # Загрузка токена из файла "token.txt"
     load_dotenv()
-    token = os.getenv("TOKEN")
+    token = os.getenv("TOKEN_GROUP")
     token_user = os.getenv("TOKEN_USER")
+    group_id = os.getenv("GROUP_ID")
 
     # DB initialization
-    db = DataBase()
+    usernamedb = os.getenv("USERNAMEDB")
+    password = os.getenv("PASSWORD")
+    host = os.getenv("HOST")
+    port = os.getenv("PORT")
+    databasename = os.getenv("DATABASENAME")
+    DSN = f"postgresql://{usernamedb}:{password}@{host}:{port}/{databasename}"
+    db = Database(DSN)
     db.create_tables()
 
-    # Инициализация VK API
+    # Group API
     vk_session = vk_api.VkApi(token=token)
     vk = vk_session.get_api()
 
@@ -681,9 +539,9 @@ if __name__ == "__main__":
     vk_user = vk_session_user.get_api()
 
     # Инициализация LongPoll
-    # longpoll = VkLongPoll(vk_session)
-    longpoll = VkBotLongPoll(vk_session, group_id='222099959')
+    longpoll = VkBotLongPoll(vk_session, group_id=group_id)
     upload = VkUpload(vk_session)
+
     # Запуск бота
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s'
