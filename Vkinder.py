@@ -107,8 +107,7 @@ def process_action(user_id, action):
         db.set_state_user(user_id, "waiting_for_city")
         # user_states[user_id] = "waiting_for_city"
         action_keyboard = create_action_keyboard(user_gender)
-        write_msg(user_id, "Введите город для поиска:",
-                  keyboard=action_keyboard)
+        write_msg(user_id, "Введите город для поиска:")
     print("Sent city input prompt to user", user_id)
 
 
@@ -174,10 +173,9 @@ def process_gender(user_id, gender):
 
     if gender.lower() == "мужчину" or gender.lower() == "женщину":
         # DB
-        db.set_state_user(user_id, "waiting_for_action")
+
         print('gender: ', gender, 'user_id: ', user_id)
         db.set_search(self_id=user_id, sex=gender)
-        # user_states[user_id] = "waiting_for_action"
 
         # Создание клавиатуры с кнопками для выбора действия
         action_keyboard = {
@@ -193,6 +191,7 @@ def process_gender(user_id, gender):
         action_keyboard = json.dumps(action_keyboard, ensure_ascii=False)
 
         write_msg(user_id, "Что вы хотите сделать?", keyboard=action_keyboard)
+        db.set_state_user(user_id, "waiting_for_action")
         print("Sent action selection keyboard to user", user_id)
     else:
         write_msg(
@@ -207,7 +206,6 @@ def create_action_keyboard(gender):
         [{"action": {"type": "text", "label": "1. Искать по городу из профиля"},
             "color": "positive"}],
         [{"action": {"type": "text", "label": "2. Ввести другой город"}, "color": "positive"}],
-        [{"action": {"type": "text", "label": "3. ◀ Вернуться к выбору города"}, "color": "default"}]
     ]
     if gender == "male":
         buttons[0][0]["color"] = "blue"
@@ -272,8 +270,6 @@ def create_confirm_city_keyboard(city_name):
                                                   f"{city_name.title()}"},
               "color": "positive"}],
             [{"action": {"type": "text", "label": "Ввести другой город"}, "color": "default"}],
-            [{"action": {"type": "text",
-                         "label": "◀️ Вернуться к выбору города"}, "color": "default"}]
         ]
     }
     return json.dumps(keyboard, ensure_ascii=False)
@@ -365,8 +361,20 @@ def create_search_or_city_keyboard():
     keyboard = {
         "one_time": True,
         "buttons": [
-            [{"action": {"type": "text", "label": "Выбрать другой город"}, "color": "default"}],
+            [{"action": {"type": "text", "label": "Изменить настройки"}, "color": "default"}],
             [{"action": {"type": "text", "label": "Начать поиск"}, "color": "positive"}]
+        ]
+    }
+    return json.dumps(keyboard, ensure_ascii=False)
+
+
+def create_menu_keyboard():
+    keyboard = {
+        "one_time": True,
+        "buttons": [
+            [{"action": {"type": "text", "label": "Изменить настройки"}, "color": "default"}],
+            [{"action": {"type": "text", "label": "Продолжить"}, "color": "positive"},
+             {"action": {"type": "text", "label": "Избранное"}, "color": "positive"}]
         ]
     }
     return json.dumps(keyboard, ensure_ascii=False)
@@ -387,10 +395,10 @@ def get_city_id(city_name: str) -> int:
 
 
 # Функция для получения топ-фотографий пользователя
-def get_top_photos(user_id) -> list:
+def get_top_photos(self_id, profile_id) -> list:
     try:
         photos_response = vk_user.photos.get(
-            owner_id=user_id, album_id='profile', extended=1)
+            owner_id=profile_id, album_id='profile', extended=1)
         photos = photos_response['items']
         photos_sorted = sorted(
             photos, key=lambda x: x['likes']['count'], reverse=True)
@@ -399,9 +407,10 @@ def get_top_photos(user_id) -> list:
                       for photo in top_photos]
     except Exception as e:
         print("Error getting top photos:", str(e))
-        index = db.get_search_index(self_id=user_id)
-        db.set_search_index(self_id=user_id, new_index=index+1)
-        return None
+        index = db.get_search_index(self_id=self_id)
+        db.set_search_index(self_id=self_id, new_index=index+1)
+        print("Index increment")
+        return
     return photo_urls
 
 
@@ -419,6 +428,7 @@ def calculate_age(bdate):
 
 
 def process_search(user_id: int) -> None:
+    write_msg(user_id, "Начинаем искать...")
     data = db.get_search(user_id)
     count = 50
     sex = '1' if data['sex'].lower() == 'женщину' else '2'
@@ -454,20 +464,22 @@ def process_search(user_id: int) -> None:
     inner_go_work.start()
 
 
-def display_profile(user_id):
+def display_profile(user_id: int):
     search_results = db.get_search_results(self_id=user_id)
     index = db.get_search_index(self_id=user_id)
     print('index: ', index)
     if index < len(search_results):
         profile = search_results[index]
+        url = "https://vk.com/id" + str(profile['id'])
         # Формируем сообщение с информацией о профиле
-        message = f"Имя: {profile['first_name']} {profile['last_name']}\nГород: {profile.get('city', {}).get('title', 'N/A')}"
+        message = f"Имя: {profile['first_name']} {profile['last_name']}\nГород: {profile.get('city', {}).get('title', 'N/A')}\nСсылка на профиль: {url}"
         # Получаем топ-фотографии профиля
-        top_photos = get_top_photos(profile['id'])
+        top_photos = get_top_photos(self_id=user_id, profile_id=profile['id'])
+        print("*** top_photos ***:", top_photos)
+
         if top_photos is None:
-            # !!!нужно прервать и передать другую карточку
-            db.set_search_index(self_id=user_id, new_index=index + 1)
             display_profile(user_id=user_id)
+
         # Создаем встроенную клавиатуру с кнопками "лайка" и "дизлайка"
         keyboard = create_like_dislike_keyboard()
         # Отправляем сообщение с клавиатурой и изображениями
@@ -484,29 +496,11 @@ def create_like_dislike_keyboard():
         "inline": True,
         "buttons": [
             [{"action": {"type": "text", "label": "👍 Лайк"}, "color": "positive"},
+             {"action": {"type": "text", "label": "Меню"}, "color": "default"},
              {"action": {"type": "text", "label": "👎 Дизлайк"}, "color": "negative"}]
         ]
     }
     return json.dumps(keyboard, ensure_ascii=False)
-
-
-# def process_like_dislike(user_id, choice):
-#     search_results = db.get_search_results(self_id=user_id)
-#     index = db.get_search_index(self_id=user_id)
-
-#     if index < len(search_results):
-#         profile = search_results[index]
-#         if choice == "👍 Лайк":
-#             # Добавляем профиль в избранные
-#             add_to_favorites(user_id, profile)
-#         # Переходим к следующему профилю
-#         db.set_search_index(self_id=user_id, new_index=index + 1)
-#         # user_id_next =
-#         # display_profile(user_id)
-#     else:
-#         # Больше профилей нет для отображения
-#         write_msg(user_id=user_id,
-#                   message="Больше профилей для отображения нет.")
 
 
 def go_work(user_id, session):
@@ -533,14 +527,6 @@ def go_work(user_id, session):
                     db.set_search_index(self_id=user_id, new_index=index + 1)
                     display_profile(user_id=user_id)
                     break
-                if request.lower() == "назад":
-                    break
-                if request.lower() == "меню":
-                    break
-                if request.lower() == "продолжить":
-                    print('continue')
-                    display_profile(user_id=user_id)
-                    break
                 if request.lower() == "стоп":
                     write_msg(user_id=user_id, message="До свидания!")
                     continue
@@ -549,8 +535,7 @@ def go_work(user_id, session):
 def main():
     for event in longpoll.listen():
         if event.type == VkBotEventType.MESSAGE_NEW:
-            # if event.to_me:
-            # user_id = event.user_id
+
             user_id = event.obj.message["from_id"]
 
             # DB
@@ -558,20 +543,20 @@ def main():
             print("DB State: ", db.get_state_user(
                 user_id), "user_id:", user_id)
 
-            # request = event.text
             request = event.obj.message["text"].lower()
 
             logging.info(
                 f"Received message from user {user_id}: {request}")
 
-            if request == "начать" or request == "start":
+            if request in ["начать", "старт", "start", "сменить настройки"]:
                 if db.get_state_user(user_id) is None:
                     db.set_state_user(user_id, "waiting_for_gender")
+
+                if db.get_state_user(user_id) == "showing_profiles":
+                    process_search(user_id)
+
                 start_conversation(user_id)
-            elif request == "пока":
-                write_msg(user_id, "До свидания!")
-            elif request == "избранные":
-                add_to_favorites(user_id)
+
             else:
                 # DB
                 user_state_db = db.get_state_user(user_id)
@@ -586,11 +571,9 @@ def main():
                     process_age_from(user_id, request)
                 elif user_state_db == "waiting_for_age_to":
                     process_age_to(user_id, request)
-                elif user_state_db == "waiting_for_search_or_city":
-                    if request == "выбрать другой город":
-                        db.set_state_user(user_id, "waiting_for_city")
-                        # user_state_db = "waiting_for_city"
-                        write_msg(user_id, "Введите город для поиска:")
+                elif request == "изменить настройки" and user_state_db == "showing_profiles":
+                    db.set_state_user(user_id, "waiting_for_city")
+                    start_conversation(user_id)
                 elif request == "начать поиск" and user_state_db == "showing_profiles":
                     process_search(user_id)
                 elif request == "продолжить" and user_state_db == "showing_profiles":
@@ -598,26 +581,15 @@ def main():
                     inner_go_work = Thread(
                         target=go_work, args=(user_id, db.session))
                     inner_go_work.start()
-
-                # if user_id in user_states:
-                #     if user_states[user_id] == "waiting_for_gender":
-                #         process_gender(user_id, request)
-                #     elif user_states[user_id] == "waiting_for_action":
-                #         process_action(user_id, request)
-                #     elif user_states[user_id] == "waiting_for_city":
-                #         process_city_input(user_id, request)
-                #     elif user_states[user_id] == "waiting_for_age_from":
-                #         process_age_from(user_id, request)
-                #     elif user_states[user_id] == "waiting_for_age_to":
-                #         process_age_to(user_id, request)
-                #     elif user_states[user_id] == "waiting_for_search_or_city":
-                #         if request == "выбрать другой город":
-                #             user_states[user_id] = "waiting_for_city"
-                #             write_msg(user_id, "Введите город для поиска:")
-                #         elif request == "начать поиск":
-                #             process_search(user_id, age_from, age_to)
-                # else:
-                #     write_msg(user_id, "Не поняла вашей команды. Пожалуйста, начните с выбора пола.")
+                elif user_state_db == "showing_profiles" and request == "меню":
+                    write_msg(user_id, f"Выберите действие.",
+                              keyboard=create_menu_keyboard())
+                elif user_state_db == "showing_profiles" and request == "избранное":
+                    write_msg(user_id, f"Ваш список избранных пользователей",
+                              keyboard=create_menu_keyboard())
+                elif user_state_db == "showing_profiles" and request not in ["👍 лайк", "👎 дизлайк"]:
+                    write_msg(user_id, f"Вы ранее уже заполнили профиль, выберите действие.",
+                              keyboard=create_search_or_city_keyboard())
 
 
 if __name__ == "__main__":
