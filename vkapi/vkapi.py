@@ -29,6 +29,6 @@ class Vk:
         self.vk_session_user = vk_api.VkApi(token=token_user)
         self.vk_user = self.vk_session_user.get_api()
 
-        # Инициализация LongPoll
+       # РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ LongPoll
         self.longpoll = VkBotLongPoll(self.vk_session, group_id=group_id)
         self.upload = VkUpload(self.vk_session)
