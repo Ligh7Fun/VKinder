@@ -1,4 +1,4 @@
-﻿import requests
+import requests
 from io import BytesIO
 
 def upload_photo(url: str) -> str:

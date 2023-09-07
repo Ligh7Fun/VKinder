@@ -1,52 +1,117 @@
 import re
-from db import db 
+from keyboards.keyboards import (create_action_keyboard,
+                                 create_confirm_city_keyboard,
+                                 create_search_or_city_keyboard,
+                                 create_menu_keyboard,
+                                 create_like_dislike_keyboard,
+                                 create_start_conversation_keyboard,
+                                 )
 
-from database.db import Database 
 
-# Функция для обработки выбора действия
+
+
+from keyboards.keyboards import (create_action_keyboard,
+                                 create_confirm_city_keyboard,
+                                 create_search_or_city_keyboard,
+                                 create_menu_keyboard,
+                                 create_like_dislike_keyboard,
+                                 create_start_conversation_keyboard,
+                                 )
+
+from messaging.messaging import write_msg
+from user_management.user_management import start_conversation, process_gender, get_user_city
+from search.search import process_search 
+from profile_display.profile_display import display_profile 
+from message_handler import handle_message 
+from vkapi.vkapi import Vk
+
+# Р¤СѓРЅРєС†РёСЏ РґР»СЏ РѕР±СЂР°Р±РѕС‚РєРё РІС‹Р±РѕСЂР° РґРµР№СЃС‚РІРёСЏ
 def process_action(user_id: int, action: str) -> None:
     print("Processing action selection for user", user_id)
     print("Received action:", action)
-    # Удаление цифр и точки из начала строки
+    # РЈРґР°Р»РµРЅРёРµ С†РёС„СЂ Рё С‚РѕС‡РєРё РёР· РЅР°С‡Р°Р»Р° СЃС‚СЂРѕРєРё
     action_text = re.sub(r'^\d+\.\s*', '', action)
 
-    if action_text.lower() == "искать по городу из профиля":
+    if action_text.lower() == "РёСЃРєР°С‚СЊ РїРѕ РіРѕСЂРѕРґСѓ РёР· РїСЂРѕС„РёР»СЏ":
         user_city = get_user_city(user_id)
         if user_city:
             db.set_state_user(user_id, "waiting_for_age_from")
             db.set_search(self_id=user_id, city=user_city)
             print('city: ', user_city, 'user: ', user_id)
-            # Обновляем состояние для ввода возраста
-            city_message = f"Город из вашего профиля: {user_city}."
+            # РћР±РЅРѕРІР»СЏРµРј СЃРѕСЃС‚РѕСЏРЅРёРµ РґР»СЏ РІРІРѕРґР° РІРѕР·СЂР°СЃС‚Р°
+            city_message = f"Р“РѕСЂРѕРґ РёР· РІР°С€РµРіРѕ РїСЂРѕС„РёР»СЏ: {user_city}."
             confirm_keyboard = create_confirm_city_keyboard(user_city)
             write_msg(user_id, city_message, keyboard=confirm_keyboard)
             return
         else:
             db.set_state_user(user_id, "waiting_for_city")
             action_keyboard = create_action_keyboard()
-            write_msg(user_id, "Город не указан в вашем профиле.\n"
-                               "Введите город вручную:",
+            write_msg(user_id, "Р“РѕСЂРѕРґ РЅРµ СѓРєР°Р·Р°РЅ РІ РІР°С€РµРј РїСЂРѕС„РёР»Рµ.\n"
+                               "Р’РІРµРґРёС‚Рµ РіРѕСЂРѕРґ РІСЂСѓС‡РЅСѓСЋ:",
                       keyboard=action_keyboard
                       )
     else:
         db.set_state_user(user_id, "waiting_for_city")
-        write_msg(user_id, "Введите город для поиска:")
-    print("Sent city input prompt to user", user_id) 
+        write_msg(user_id, "Р’РІРµРґРёС‚Рµ РіРѕСЂРѕРґ РґР»СЏ РїРѕРёСЃРєР°:")
+    print("Sent city input prompt to user", user_id)  
     
-def process_confirm_change(user_id: int, choice: str) -> None:
-    if choice.lower() == "да":
+def process_city_input(user_id: int, city_name: str) -> None:
+    if city_name.lower() == "РёР· РїСЂРѕС„РёР»СЏ":
+        user_city = get_user_city(user_id)
+        if user_city:
+            keyboard = create_action_keyboard()
+            db.set_search(self_id=user_id, city=user_city)
+            write_msg(user_id, f"Р’С‹ РІС‹Р±СЂР°Р»Рё РіРѕСЂРѕРґ РёР· РїСЂРѕС„РёР»СЏ: "
+                               f"{user_city.title()}.", keyboard=keyboard
+                      )
+
+        else:
+            write_msg(user_id, "Р“РѕСЂРѕРґ РЅРµ СѓРєР°Р·Р°РЅ РІ РІР°С€РµРј РїСЂРѕС„РёР»Рµ.\n"
+                               "Р’РІРµРґРёС‚Рµ РіРѕСЂРѕРґ РІСЂСѓС‡РЅСѓСЋ:"
+                      )
+            # DB
+            db.set_state_user(user_id, "waiting_for_city")
+            # user_states[user_id] = "waiting_for_city"
+    else:
+        # DB
+        db.set_state_user(user_id, "waiting_for_age_from")
+        # user_states[user_id] = "waiting_for_age_from"  # РћР¶РёРґР°РЅРёРµ РІРІРѕРґР°
+        # РЅР°С‡Р°Р»СЊРЅРѕРіРѕ РІРѕР·СЂР°СЃС‚Р°
+        db.set_search(self_id=user_id, city=city_name)
+        write_msg(user_id, f"Р’С‹ РІС‹Р±СЂР°Р»Рё РіРѕСЂРѕРґ: {city_name.title()}.\n"
+                           f"РўРµРїРµСЂСЊ РІРІРµРґРёС‚Рµ РЅР°С‡Р°Р»СЊРЅС‹Р№ РІРѕР·СЂР°СЃС‚:"
+                  )
+
+    
+def process_confirm_city(user_id: int, city_name: str) -> None:
+    if city_name.startswith("РџРѕРґС‚РІРµСЂРґРёС‚СЊ"):
+        city = city_name[11:]
+        db.set_state_user(user_id, "waiting_for_age")
+        db.set_search(self_id=user_id, city=city)
+        print('city: ', city, 'user: ', user_id)
+        write_msg(user_id, f"Р’С‹ РІС‹Р±СЂР°Р»Рё РіРѕСЂРѕРґ: {city.title()}.\nРўРµРїРµСЂСЊ"
+                           f" РІРІРµРґРёС‚Рµ Р¶РµР»Р°РµРјС‹Р№ РІРѕР·СЂР°СЃС‚:"
+                  )
+    elif city_name == "Р’РІРµСЃС‚Рё РґСЂСѓРіРѕР№ РіРѕСЂРѕРґ":
+        # DB
         db.set_state_user(user_id, "waiting_for_city")
-        # Вернуться к ожиданию ввода города
+        # РР·РјРµРЅРµРЅРѕ СЃРѕСЃС‚РѕСЏРЅРёРµ РЅР° РѕР¶РёРґР°РЅРёРµ РІРІРѕРґР° РіРѕСЂРѕРґР°
+        write_msg(user_id, "Р’РІРµРґРёС‚Рµ РіРѕСЂРѕРґ:")
+
+def process_confirm_change(user_id: int, choice: str) -> None:
+    if choice.lower() == "РґР°":
+        db.set_state_user(user_id, "waiting_for_city")
+        # Р’РµСЂРЅСѓС‚СЊСЃСЏ Рє РѕР¶РёРґР°РЅРёСЋ РІРІРѕРґР° РіРѕСЂРѕРґР°
         action_keyboard = create_action_keyboard()
-        write_msg(user_id, "Введите город для поиска:",
+        write_msg(user_id, "Р’РІРµРґРёС‚Рµ РіРѕСЂРѕРґ РґР»СЏ РїРѕРёСЃРєР°:",
                   keyboard=action_keyboard
                   )
-    elif choice.lower() == "нет":
+    elif choice.lower() == "РЅРµС‚":
         db.set_state_user(user_id, "waiting_for_action")
-        # Вернуться к выбору действия
+        # Р’РµСЂРЅСѓС‚СЊСЃСЏ Рє РІС‹Р±РѕСЂСѓ РґРµР№СЃС‚РІРёСЏ
         action_keyboard = create_action_keyboard()
-        write_msg(user_id, "Что вы хотите сделать?",
+        write_msg(user_id, "Р§С‚Рѕ РІС‹ С…РѕС‚РёС‚Рµ СЃРґРµР»Р°С‚СЊ?",
                   keyboard=action_keyboard
                   )
     else:
-        write_msg(user_id, "Пожалуйста, ответьте \"Да\" или \"Нет\".")
+        write_msg(user_id, "РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РѕС‚РІРµС‚СЊС‚Рµ \"Р”Р°\" РёР»Рё \"РќРµС‚\".")

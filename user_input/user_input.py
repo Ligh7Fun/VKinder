@@ -3,36 +3,36 @@ from datetime import datetime
 
 
 def process_confirm_city(user_id: int, city_name: str) -> None:
-    if city_name.startswith("Ïîäòâåðäèòü"):
+    if city_name.startswith("ÐŸÐ¾Ð´Ñ‚Ð²ÐµÑ€Ð´Ð¸Ñ‚ÑŒ"):
         city = city_name[11:]
         db.set_state_user(user_id, "waiting_for_age")
         db.set_search(self_id=user_id, city=city)
         print('city: ', city, 'user: ', user_id)
-        write_msg(user_id, f"Âû âûáðàëè ãîðîä: {city.title()}.\nÒåïåðü"
-                           f" ââåäèòå æåëàåìûé âîçðàñò:"
+        write_msg(user_id, f"Ð’Ñ‹ Ð²Ñ‹Ð±Ñ€Ð°Ð»Ð¸ Ð³Ð¾Ñ€Ð¾Ð´: {city.title()}.\nÐ¢ÐµÐ¿ÐµÑ€ÑŒ"
+                           f" Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð¶ÐµÐ»Ð°ÐµÐ¼Ñ‹Ð¹ Ð²Ð¾Ð·Ñ€Ð°ÑÑ‚:"
                   )
-    elif city_name == "Ââåñòè äðóãîé ãîðîä":
+    elif city_name == "Ð’Ð²ÐµÑÑ‚Ð¸ Ð´Ñ€ÑƒÐ³Ð¾Ð¹ Ð³Ð¾Ñ€Ð¾Ð´":
         # DB
         db.set_state_user(user_id, "waiting_for_city")
-        # Èçìåíåíî ñîñòîÿíèå íà îæèäàíèå ââîäà ãîðîäà
-        write_msg(user_id, "Ââåäèòå ãîðîä:")
+        # Ð˜Ð·Ð¼ÐµÐ½ÐµÐ½Ð¾ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ Ð½Ð° Ð¾Ð¶Ð¸Ð´Ð°Ð½Ð¸Ðµ Ð²Ð²Ð¾Ð´Ð° Ð³Ð¾Ñ€Ð¾Ð´Ð°
+        write_msg(user_id, "Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð³Ð¾Ñ€Ð¾Ð´:")
 
 
 
 
 def process_city_input(user_id: int, city_name: str) -> None:
-    if city_name.lower() == "èç ïðîôèëÿ":
+    if city_name.lower() == "Ð¸Ð· Ð¿Ñ€Ð¾Ñ„Ð¸Ð»Ñ":
         user_city = get_user_city(user_id)
         if user_city:
             keyboard = create_action_keyboard()
             db.set_search(self_id=user_id, city=user_city)
-            write_msg(user_id, f"Âû âûáðàëè ãîðîä èç ïðîôèëÿ: "
+            write_msg(user_id, f"Ð’Ñ‹ Ð²Ñ‹Ð±Ñ€Ð°Ð»Ð¸ Ð³Ð¾Ñ€Ð¾Ð´ Ð¸Ð· Ð¿Ñ€Ð¾Ñ„Ð¸Ð»Ñ: "
                                f"{user_city.title()}.", keyboard=keyboard
                       )
 
         else:
-            write_msg(user_id, "Ãîðîä íå óêàçàí â âàøåì ïðîôèëå.\n"
-                               "Ââåäèòå ãîðîä âðó÷íóþ:"
+            write_msg(user_id, "Ð“Ð¾Ñ€Ð¾Ð´ Ð½Ðµ ÑƒÐºÐ°Ð·Ð°Ð½ Ð² Ð²Ð°ÑˆÐµÐ¼ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»Ðµ.\n"
+                               "Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð³Ð¾Ñ€Ð¾Ð´ Ð²Ñ€ÑƒÑ‡Ð½ÑƒÑŽ:"
                       )
             # DB
             db.set_state_user(user_id, "waiting_for_city")
@@ -40,56 +40,56 @@ def process_city_input(user_id: int, city_name: str) -> None:
     else:
         # DB
         db.set_state_user(user_id, "waiting_for_age_from")
-        # user_states[user_id] = "waiting_for_age_from"  # Îæèäàíèå ââîäà
-        # íà÷àëüíîãî âîçðàñòà
+        # user_states[user_id] = "waiting_for_age_from"  # ÐžÐ¶Ð¸Ð´Ð°Ð½Ð¸Ðµ Ð²Ð²Ð¾Ð´Ð°
+        # Ð½Ð°Ñ‡Ð°Ð»ÑŒÐ½Ð¾Ð³Ð¾ Ð²Ð¾Ð·Ñ€Ð°ÑÑ‚Ð°
         db.set_search(self_id=user_id, city=city_name)
-        write_msg(user_id, f"Âû âûáðàëè ãîðîä: {city_name.title()}.\n"
-                           f"Òåïåðü ââåäèòå íà÷àëüíûé âîçðàñò:"
+        write_msg(user_id, f"Ð’Ñ‹ Ð²Ñ‹Ð±Ñ€Ð°Ð»Ð¸ Ð³Ð¾Ñ€Ð¾Ð´: {city_name.title()}.\n"
+                           f"Ð¢ÐµÐ¿ÐµÑ€ÑŒ Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð½Ð°Ñ‡Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð²Ð¾Ð·Ñ€Ð°ÑÑ‚:"
                   )
 def process_age(user_id: int, age: int) -> None:
     print("Processing age input for user", user_id)
     try:
         age = int(age)
-        if 0 <= age <= 150:  # Ïðîâåðêà íà ðàçóìíûé äèàïàçîí âîçðàñòà
+        if 0 <= age <= 150:  # ÐŸÑ€Ð¾Ð²ÐµÑ€ÐºÐ° Ð½Ð° Ñ€Ð°Ð·ÑƒÐ¼Ð½Ñ‹Ð¹ Ð´Ð¸Ð°Ð¿Ð°Ð·Ð¾Ð½ Ð²Ð¾Ð·Ñ€Ð°ÑÑ‚Ð°
             write_msg(user_id,
-                      f"Âû ââåëè âîçðàñò: {age}.\nÌîæåòå ââåñòè "
-                      f"äðóãîé ãîðîä èëè ïðîäîëæèòü ïîèñê."
+                      f"Ð’Ñ‹ Ð²Ð²ÐµÐ»Ð¸ Ð²Ð¾Ð·Ñ€Ð°ÑÑ‚: {age}.\nÐœÐ¾Ð¶ÐµÑ‚Ðµ Ð²Ð²ÐµÑÑ‚Ð¸ "
+                      f"Ð´Ñ€ÑƒÐ³Ð¾Ð¹ Ð³Ð¾Ñ€Ð¾Ð´ Ð¸Ð»Ð¸ Ð¿Ñ€Ð¾Ð´Ð¾Ð»Ð¶Ð¸Ñ‚ÑŒ Ð¿Ð¾Ð¸ÑÐº."
                       )
             # DB
             db.set_state_user(user_id, "waiting_for_city")
-            # Âåðíóòüñÿ â ñîñòîÿíèå îæèäàíèÿ ââîäà ãîðîäà
+            # Ð’ÐµÑ€Ð½ÑƒÑ‚ÑŒÑÑ Ð² ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ Ð¾Ð¶Ð¸Ð´Ð°Ð½Ð¸Ñ Ð²Ð²Ð¾Ð´Ð° Ð³Ð¾Ñ€Ð¾Ð´Ð°
         else:
             write_msg(user_id,
-                      "Ââåäèòå êîððåêòíûé âîçðàñò (îò 0 äî 150)."
+                      "Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ ÐºÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð½Ñ‹Ð¹ Ð²Ð¾Ð·Ñ€Ð°ÑÑ‚ (Ð¾Ñ‚ 0 Ð´Ð¾ 150)."
                       )
     except ValueError:
         write_msg(user_id,
-                  "Ââåäèòå ÷èñëîâîé âîçðàñò (îò 0 äî 150)."
+                  "Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ñ‡Ð¸ÑÐ»Ð¾Ð²Ð¾Ð¹ Ð²Ð¾Ð·Ñ€Ð°ÑÑ‚ (Ð¾Ñ‚ 0 Ð´Ð¾ 150)."
                   ) 
         
 def process_age_from(user_id: int, age_from: int) -> None:
     print("Processing age from input for user", user_id)
     try:
         age_from = int(age_from)
-        if 0 <= age_from <= 150:  # Ïðîâåðêà íà ðàçóìíûé äèàïàçîí âîçðàñòà
+        if 0 <= age_from <= 150:  # ÐŸÑ€Ð¾Ð²ÐµÑ€ÐºÐ° Ð½Ð° Ñ€Ð°Ð·ÑƒÐ¼Ð½Ñ‹Ð¹ Ð´Ð¸Ð°Ð¿Ð°Ð·Ð¾Ð½ Ð²Ð¾Ð·Ñ€Ð°ÑÑ‚Ð°
             # DB
             db.set_state_user(user_id, "waiting_for_age_to")
-            # user_states[user_id] = "waiting_for_age_to"  # Îæèäàíèå ââîäà
-            # êîíå÷íîãî âîçðàñòà
+            # user_states[user_id] = "waiting_for_age_to"  # ÐžÐ¶Ð¸Ð´Ð°Ð½Ð¸Ðµ Ð²Ð²Ð¾Ð´Ð°
+            # ÐºÐ¾Ð½ÐµÑ‡Ð½Ð¾Ð³Ð¾ Ð²Ð¾Ð·Ñ€Ð°ÑÑ‚Ð°
             db.set_search(self_id=user_id, age_from=age_from)
             print('age_from', age_from, 'user: ', user_id)
-            write_msg(user_id, f"Âû ââåëè íà÷àëüíûé âîçðàñò: "
-                               f"{age_from}.\nÒåïåðü ââåäèòå êîíå÷íûé "
-                               f"âîçðàñò:"
+            write_msg(user_id, f"Ð’Ñ‹ Ð²Ð²ÐµÐ»Ð¸ Ð½Ð°Ñ‡Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð²Ð¾Ð·Ñ€Ð°ÑÑ‚: "
+                               f"{age_from}.\nÐ¢ÐµÐ¿ÐµÑ€ÑŒ Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ ÐºÐ¾Ð½ÐµÑ‡Ð½Ñ‹Ð¹ "
+                               f"Ð²Ð¾Ð·Ñ€Ð°ÑÑ‚:"
                       )
 
         else:
             write_msg(user_id,
-                      "Ââåäèòå êîððåêòíûé âîçðàñò (îò 0 äî 150)."
+                      "Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ ÐºÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð½Ñ‹Ð¹ Ð²Ð¾Ð·Ñ€Ð°ÑÑ‚ (Ð¾Ñ‚ 0 Ð´Ð¾ 150)."
                       )
     except ValueError:
         write_msg(user_id,
-                  "Ââåäèòå ÷èñëîâîé âîçðàñò (îò 0 äî 150)."
+                  "Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ñ‡Ð¸ÑÐ»Ð¾Ð²Ð¾Ð¹ Ð²Ð¾Ð·Ñ€Ð°ÑÑ‚ (Ð¾Ñ‚ 0 Ð´Ð¾ 150)."
                   ) 
         
 def process_age_to(user_id: int, age_to: int) -> None:
@@ -97,25 +97,25 @@ def process_age_to(user_id: int, age_to: int) -> None:
         age_to = int(age_to)
         # DB
         db.set_state_user(user_id, "waiting_for_search_or_city")
-        # user_states[user_id] = "waiting_for_search_or_city"  # Îáíîâëÿåì
-        # ñîñòîÿíèå äëÿ âûáîðà äåéñòâèÿ
+        # user_states[user_id] = "waiting_for_search_or_city"  # ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼
+        # ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ Ð´Ð»Ñ Ð²Ñ‹Ð±Ð¾Ñ€Ð° Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ
         db.set_search(self_id=user_id, age_to=age_to)
         print('age_to', age_to, 'user: ', user_id)
 
         data_for_search = db.get_search(self_id=user_id)
         print(data_for_search)
 
-        write_msg(user_id, f"Âû ââåëè ñëåäóþùèå äàííûå:\n"
-                           f"Ïîë: {data_for_search['sex']}\n"
-                           f"Ãîðîä: {data_for_search['city'].title()}\n"
-                           f"Íà÷àëüíûé âîçðàñò: {data_for_search['age_from']}"
-                           f"\nÊîíå÷íûé âîçðàñò: {data_for_search['age_to']}",
+        write_msg(user_id, f"Ð’Ñ‹ Ð²Ð²ÐµÐ»Ð¸ ÑÐ»ÐµÐ´ÑƒÑŽÑ‰Ð¸Ðµ Ð´Ð°Ð½Ð½Ñ‹Ðµ:\n"
+                           f"ÐŸÐ¾Ð»: {data_for_search['sex']}\n"
+                           f"Ð“Ð¾Ñ€Ð¾Ð´: {data_for_search['city'].title()}\n"
+                           f"ÐÐ°Ñ‡Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð²Ð¾Ð·Ñ€Ð°ÑÑ‚: {data_for_search['age_from']}"
+                           f"\nÐšÐ¾Ð½ÐµÑ‡Ð½Ñ‹Ð¹ Ð²Ð¾Ð·Ñ€Ð°ÑÑ‚: {data_for_search['age_to']}",
                   keyboard=create_search_or_city_keyboard()
                   )
         db.set_state_user(user_id, "showing_profiles")
     except ValueError:
-        write_msg(user_id, "Íåêîððåêòíûé ââîä. "
-                           "Ïîæàëóéñòà, ââåäèòå ÷èñëî."
+        write_msg(user_id, "ÐÐµÐºÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð½Ñ‹Ð¹ Ð²Ð²Ð¾Ð´. "
+                           "ÐŸÐ¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð°, Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ñ‡Ð¸ÑÐ»Ð¾."
                   )
 
 def get_city_id(city_name: str) -> int | None:
@@ -130,7 +130,7 @@ def get_city_id(city_name: str) -> int | None:
 
 
 
-# Ñ÷èòàåì ñêîëüêî ëåò
+# Ð¡Ñ‡Ð¸Ñ‚Ð°ÐµÐ¼ ÑÐºÐ¾Ð»ÑŒÐºÐ¾ Ð»ÐµÑ‚
 def calculate_age(bdate: str) -> int:
     bdate = datetime.strptime(bdate, '%d.%m.%Y')
     current_date = datetime.now()

@@ -1,21 +1,21 @@
-from vk_api import vk 
-from vk_api.bot_longpoll import VkBotEventType, VkBotLongPoll
+from vk_api.vk_api import VkApi
+from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.upload import VkUpload
 import vk_api
 
-# Ôóíêöèÿ äëÿ íà÷àëà äèàëîãà ñ ïîëüçîâàòåëåì
+# Ð¤ÑƒÐ½ÐºÑ†Ð¸Ñ Ð´Ð»Ñ Ð½Ð°Ñ‡Ð°Ð»Ð° Ð´Ð¸Ð°Ð»Ð¾Ð³Ð° Ñ Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»ÐµÐ¼
 def start_conversation(user_id: int) -> None:
     print("Starting conversation with user", user_id)
 
-    # Îòïðàâêà ïðèâåòñòâåííîãî ñîîáùåíèÿ è êëàâèàòóðû äëÿ âûáîðà ïîëà
-    message = ("Ïðèâåò!\nß áîò, êîòîðûé ïîìîæåò âàì íàéòè èíòåðåñíûõ ëþäåé.\n"
-               "Âûáåðèòå ïîë, êîòîðûé âû èùåòå:")
+    # ÐžÑ‚Ð¿Ñ€Ð°Ð²ÐºÐ° Ð¿Ñ€Ð¸Ð²ÐµÑ‚ÑÑ‚Ð²ÐµÐ½Ð½Ð¾Ð³Ð¾ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ Ð¸ ÐºÐ»Ð°Ð²Ð¸Ð°Ñ‚ÑƒÑ€Ñ‹ Ð´Ð»Ñ Ð²Ñ‹Ð±Ð¾Ñ€Ð° Ð¿Ð¾Ð»Ð°
+    message = ("ÐŸÑ€Ð¸Ð²ÐµÑ‚!\nÐ¯ Ð±Ð¾Ñ‚, ÐºÐ¾Ñ‚Ð¾Ñ€Ñ‹Ð¹ Ð¿Ð¾Ð¼Ð¾Ð¶ÐµÑ‚ Ð²Ð°Ð¼ Ð½Ð°Ð¹Ñ‚Ð¸ Ð¸Ð½Ñ‚ÐµÑ€ÐµÑÐ½Ñ‹Ñ… Ð»ÑŽÐ´ÐµÐ¹.\n"
+               "Ð’Ñ‹Ð±ÐµÑ€Ð¸Ñ‚Ðµ Ð¿Ð¾Ð», ÐºÐ¾Ñ‚Ð¾Ñ€Ñ‹Ð¹ Ð²Ñ‹ Ð¸Ñ‰ÐµÑ‚Ðµ:")
 
     keyboard = create_start_conversation_keyboard()
-    # Îòïðàâêà ñîîáùåíèÿ ñ êëàâèàòóðîé
+    # ÐžÑ‚Ð¿Ñ€Ð°Ð²ÐºÐ° ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ Ñ ÐºÐ»Ð°Ð²Ð¸Ð°Ñ‚ÑƒÑ€Ð¾Ð¹
     write_msg(user_id=user_id, message=message, keyboard=keyboard)
 
-    # Óñòàíîâêà ñîñòîÿíèÿ ïîëüçîâàòåëÿ â "îæèäàíèå âûáîðà ïîëà"
+    # Ð£ÑÑ‚Ð°Ð½Ð¾Ð²ÐºÐ° ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ñ Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»Ñ Ð² "Ð¾Ð¶Ð¸Ð´Ð°Ð½Ð¸Ðµ Ð²Ñ‹Ð±Ð¾Ñ€Ð° Ð¿Ð¾Ð»Ð°"
     db.set_state_user(user_id, "waiting_for_gender")
     print("DB State: ", db.get_state_user(user_id), "user_id:", user_id)
     print("Sent gender selection keyboard to user", user_id)
@@ -23,14 +23,14 @@ def start_conversation(user_id: int) -> None:
 def process_gender(user_id: int, gender: str) -> None:
     print("Processing gender selection for user", user_id)
 
-    if gender.lower() == "ìóæ÷èíó" or gender.lower() == "æåíùèíó":
+    if gender.lower() == "Ð¼ÑƒÐ¶Ñ‡Ð¸Ð½Ñƒ" or gender.lower() == "Ð¶ÐµÐ½Ñ‰Ð¸Ð½Ñƒ":
         print('gender: ', gender, 'user_id: ', user_id)
         db.set_search(self_id=user_id, sex=gender)
 
-        # Ñîçäàíèå êëàâèàòóðû ñ êíîïêàìè äëÿ âûáîðà äåéñòâèÿ
+        # Ð¡Ð¾Ð·Ð´Ð°Ð½Ð¸Ðµ ÐºÐ»Ð°Ð²Ð¸Ð°Ñ‚ÑƒÑ€Ñ‹ Ñ ÐºÐ½Ð¾Ð¿ÐºÐ°Ð¼Ð¸ Ð´Ð»Ñ Ð²Ñ‹Ð±Ð¾Ñ€Ð° Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ
         keyboard = create_action_keyboard()
 
-        write_msg(user_id, "×òî âû õîòèòå ñäåëàòü?",
+        write_msg(user_id, "Ð§Ñ‚Ð¾ Ð²Ñ‹ Ñ…Ð¾Ñ‚Ð¸Ñ‚Ðµ ÑÐ´ÐµÐ»Ð°Ñ‚ÑŒ?",
                   keyboard=keyboard
                   )
         db.set_state_user(user_id, "waiting_for_action")
@@ -38,8 +38,8 @@ def process_gender(user_id: int, gender: str) -> None:
     else:
         write_msg(
                 user_id=user_id,
-                message="Íå ïîíÿëà âàøåãî âûáîðà. "
-                        "Ïîæàëóéñòà, âûáåðèòå ïîë èç ñïèñêà."
+                message="ÐÐµ Ð¿Ð¾Ð½ÑÐ»Ð° Ð²Ð°ÑˆÐµÐ³Ð¾ Ð²Ñ‹Ð±Ð¾Ñ€Ð°. "
+                        "ÐŸÐ¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð°, Ð²Ñ‹Ð±ÐµÑ€Ð¸Ñ‚Ðµ Ð¿Ð¾Ð» Ð¸Ð· ÑÐ¿Ð¸ÑÐºÐ°."
         )
         print("Sent invalid gender response message to user", user_id)
 def get_user_city(user_id: int) -> str | None:

@@ -41,8 +41,9 @@ logging.basicConfig(filename='bot.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s'
                     ) 
 
-from messaging.messaging import write_msg
-from user_actions.user_actions import process_action, process_confirm_change
+from messaging.messaging import write_msg 
+from message_handler import handle_message 
+from user_actions.user_actions import (process_action, process_confirm_change)
 from user_management.user_management import start_conversation, process_gender, get_user_city
 from search.search import process_search 
 from user_actions.user_actions import (process_confirm_city,

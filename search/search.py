@@ -1,14 +1,15 @@
-from vk_api import vk_user  
+from vk_api.vk_api import VkApi
+
 
 def process_search(user_id: int) -> None:
-    write_msg(user_id, "Начинаем искать...")
+    write_msg(user_id, "РќР°С‡РёРЅР°РµРј РёСЃРєР°С‚СЊ...")
     data = db.get_search(user_id)
     count = 50
-    sex = '1' if data['sex'].lower() == 'женщину' else '2'
+    sex = '1' if data['sex'].lower() == 'Р¶РµРЅС‰РёРЅСѓ' else '2'
     print('city id: ', get_city_id(data['city']))
 
     search_results = vk_user.users.search(count=count,
-                                          country=1,  # Россия
+                                          country=1,  # Р РѕСЃСЃРёСЏ
                                           sex=sex,
                                           city=get_city_id(data['city']),
                                           age_from=str(data['age_from']),
@@ -23,15 +24,15 @@ def process_search(user_id: int) -> None:
     print(search_results['items'])
     print("***" * 20)
 
-    # Сохраняем результаты поиска в базе данных
+    # РЎРѕС…СЂР°РЅСЏРµРј СЂРµР·СѓР»СЊС‚Р°С‚С‹ РїРѕРёСЃРєР° РІ Р±Р°Р·Рµ РґР°РЅРЅС‹С…
     db.set_search(self_id=user_id, results=None)
     db.set_search(self_id=user_id, results=search_results['items'])
 
-    # Устанавливаем состояние пользователя для показа профилей
+    # РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј СЃРѕСЃС‚РѕСЏРЅРёРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РґР»СЏ РїРѕРєР°Р·Р° РїСЂРѕС„РёР»РµР№
     db.set_state_user(self_id=user_id, state="showing_profiles")
-    # Устанавливаем начальный индекс на 0
+    # РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј РЅР°С‡Р°Р»СЊРЅС‹Р№ РёРЅРґРµРєСЃ РЅР° 0
     if db.get_search_index(self_id=user_id) == 0:
         db.set_search_index(self_id=user_id, new_index=0)
 
-    # Отображаем первый профиль
+    # РћС‚РѕР±СЂР°Р¶Р°РµРј РїРµСЂРІС‹Р№ РїСЂРѕС„РёР»СЊ
     display_profile(user_id=user_id)

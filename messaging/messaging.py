@@ -23,32 +23,32 @@ def write_msg(user_id: int,
             }
     ) 
     
-# Функция для обработки выбора действия
+# Р¤СѓРЅРєС†РёСЏ РґР»СЏ РѕР±СЂР°Р±РѕС‚РєРё РІС‹Р±РѕСЂР° РґРµР№СЃС‚РІРёСЏ
 def process_action(user_id: int, action: str) -> None:
     print("Processing action selection for user", user_id)
     print("Received action:", action)
-    # Удаление цифр и точки из начала строки
+    # РЈРґР°Р»РµРЅРёРµ С†РёС„СЂ Рё С‚РѕС‡РєРё РёР· РЅР°С‡Р°Р»Р° СЃС‚СЂРѕРєРё
     action_text = re.sub(r'^\d+\.\s*', '', action)
 
-    if action_text.lower() == "искать по городу из профиля":
+    if action_text.lower() == "РёСЃРєР°С‚СЊ РїРѕ РіРѕСЂРѕРґСѓ РёР· РїСЂРѕС„РёР»СЏ":
         user_city = get_user_city(user_id)
         if user_city:
             db.set_state_user(user_id, "waiting_for_age_from")
             db.set_search(self_id=user_id, city=user_city)
             print('city: ', user_city, 'user: ', user_id)
-            # Обновляем состояние для ввода возраста
-            city_message = f"Город из вашего профиля: {user_city}."
+            # РћР±РЅРѕРІР»СЏРµРј СЃРѕСЃС‚РѕСЏРЅРёРµ РґР»СЏ РІРІРѕРґР° РІРѕР·СЂР°СЃС‚Р°
+            city_message = f"Р“РѕСЂРѕРґ РёР· РІР°С€РµРіРѕ РїСЂРѕС„РёР»СЏ: {user_city}."
             confirm_keyboard = create_confirm_city_keyboard(user_city)
             write_msg(user_id, city_message, keyboard=confirm_keyboard)
             return
         else:
             db.set_state_user(user_id, "waiting_for_city")
             action_keyboard = create_action_keyboard()
-            write_msg(user_id, "Город не указан в вашем профиле.\n"
-                               "Введите город вручную:",
+            write_msg(user_id, "Р“РѕСЂРѕРґ РЅРµ СѓРєР°Р·Р°РЅ РІ РІР°С€РµРј РїСЂРѕС„РёР»Рµ.\n"
+                               "Р’РІРµРґРёС‚Рµ РіРѕСЂРѕРґ РІСЂСѓС‡РЅСѓСЋ:",
                       keyboard=action_keyboard
                       )
     else:
         db.set_state_user(user_id, "waiting_for_city")
-        write_msg(user_id, "Введите город для поиска:")
+        write_msg(user_id, "Р’РІРµРґРёС‚Рµ РіРѕСЂРѕРґ РґР»СЏ РїРѕРёСЃРєР°:")
     print("Sent city input prompt to user", user_id)
