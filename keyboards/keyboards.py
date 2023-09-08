@@ -2,6 +2,15 @@ import json
 
 
 def create_action_keyboard() -> str:
+    """
+    Создает клавиатуру с кнопками действий.
+
+    Args:
+        None.
+
+    Returns:
+        str: JSON-строка, представляющая созданную клавиатуру.
+    """
     keyboard = {
         "one_time": True,
         "buttons": [
@@ -16,6 +25,15 @@ def create_action_keyboard() -> str:
 
 
 def create_confirm_city_keyboard(city_name: str) -> str:
+    """
+    Создает клавиатуру для подтверждения города.
+
+    Args:
+        city_name (str): Название города для подтверждения.
+
+    Returns:
+        str: JSON-строка, представляющая созданную клавиатуру.
+    """
     keyboard = {
         "one_time": True,
         "buttons": [
@@ -30,6 +48,15 @@ def create_confirm_city_keyboard(city_name: str) -> str:
 
 
 def create_search_or_city_keyboard():
+    """
+    Создает клавиатуру для поиска или выбора города.
+
+    Args:
+        None.
+
+    Returns:
+         str: JSON-строка, представляющая созданную клавиатуру.
+    """
     keyboard = {
         "one_time": True,
         "buttons": [
@@ -43,6 +70,15 @@ def create_search_or_city_keyboard():
 
 
 def create_menu_keyboard():
+    """
+    Создает клавиатуру с меню.
+
+    Args:
+        None.
+
+    Returns:
+        str: JSON-строка, представляющая созданную клавиатуру.
+    """
     keyboard = {
         "one_time": True,
         "buttons": [
@@ -58,6 +94,15 @@ def create_menu_keyboard():
 
 
 def create_like_dislike_keyboard():
+    """
+    Создает клавиатуру для лайков и дизлайков с использованием VK API.
+
+    Args:
+        None.
+
+    Returns:
+        str: JSON-строка, представляющая созданную клавиатуру.
+    """
     keyboard = {
         "inline": True,
         "buttons": [
@@ -72,6 +117,15 @@ def create_like_dislike_keyboard():
 
 
 def create_start_conversation_keyboard():
+    """
+    Создает клавиатуру для начала разговора.
+
+    Args:
+        None.
+
+    Returns:
+        str: JSON-строка, представляющая созданную клавиатуру.
+    """
     keyboard = {
         "one_time": True,
         "buttons": [

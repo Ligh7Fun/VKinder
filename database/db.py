@@ -5,7 +5,11 @@ from sqlalchemy.orm import sessionmaker
 import sqlalchemy as sq
 
 from database.models import Base
-from database.models import User, Status, ViewData, Search
+from database.models import (User,
+                             Status,
+                             ViewData,
+                             Search,
+                             )
 
 load_dotenv()
 
@@ -22,7 +26,7 @@ class Database:
         # Создание объекта сессии, для работы с данными в базе
         self.session = self.Session()
 
-    def create_tables(self):
+    def create_tables(self) -> None:
         """
         Создать таблицы в базе.
 
@@ -56,16 +60,18 @@ class Database:
         Returns:
             None
         """
-        self.session.add(Status(name=status))
-        self.session.commit()
+        status_ = self.session.query(Status).filter_by(name=status).first()
+        if not status_:
+            self.session.add(Status(name=status))
+            self.session.commit()
 
     def add_user(self, self_id: int, state: str = None) -> None:
         """
         Добавить пользователя с указанным VK идентификатором.
 
         Args:
-            self_id: Идентификатор пользователя VK.
-            state: Состояние пользователя.
+            self_id (int): Идентификатор пользователя VK.
+            state (str): Состояние пользователя.
         Returns:
             None
         """
@@ -79,7 +85,7 @@ class Database:
         Получить состояние пользователя.
 
         Args:
-            self_id: ID пользователя VK.
+            self_id (int): ID пользователя VK.
         Returns:
             State: Состояние пользователя
         """
@@ -90,8 +96,8 @@ class Database:
         Установить состояние пользователя.
 
         Args:
-            self_id: ID пользователя VK.
-            state: Состояние пользователя
+            self_id (int): ID пользователя VK.
+            state (str): Состояние пользователя
         Returns:
             None
         """
@@ -112,7 +118,8 @@ class Database:
         Args:
             self_id (int): ID пользователя, который добавляет
             user_id (int): ID пользователя, которого добавляют
-
+            first_name (str): Имя пользователя
+            last_name (str): Фамилия пользователя
         Returns:
             None.
         """
@@ -137,8 +144,9 @@ class Database:
 
         Args:
             self_id (int): ID пользователя, который добавляет
-            user_id (int): ID полтзователя, которого добавляют
-
+            user_id (int): ID пользователя, которого добавляют
+            first_name (str): Имя пользователя
+            last_name (str): Фамилия пользователя
         Returns:
             None.
         """
@@ -185,7 +193,7 @@ class Database:
             List: Список словарей, содержащих следующие ключи:
 
                 - 'vk_id': ID пользователя, который добавил лайк
-                - 'viewedvkid': ID пользователя, кому был поставлен лайк
+                - 'viewed_vk_id': ID пользователя, кому был поставлен лайк
                 - 'status_id': ID статуса.
         """
         return_list = []
@@ -215,7 +223,7 @@ class Database:
             List: Список словарей, содержащих следующие ключи:
 
                 - 'vk_id': ID пользователя, который добавил дизлайк
-                - 'viewedvkid': ID пользователя, кому был поставлен дизлайк
+                - 'viewed_vk_id': ID пользователя, кому был поставлен дизлайк
                 - 'status_id': ID статуса.
         """
         return_list = []
@@ -263,13 +271,13 @@ class Database:
         Записать параметры поиска.
 
         Args:
-            self_id: ID пользователя.
-            sex: Пол.
-            city: Город.
-            age_from: Нижняя граница возраста.
-            age_to: Верхняя граница возраста.
-            results: Результаты поиска.
-            results_index: Индекс поиска.
+            self_id (int): ID пользователя.
+            sex (str): Пол.
+            city (str): Город.
+            age_from (int): Нижняя граница возраста.
+            age_to (int): Верхняя граница возраста.
+            results (Dict[str, Any]): Результаты поиска.
+            results_index (int): Индекс поиска.
         Returns:
             None
         """
@@ -306,7 +314,7 @@ class Database:
         Получить параметры поиска.
 
         Args:
-            self_id: ID пользователя.
+            self_id (int): ID пользователя.
         Returns:
             dict: Словарь параметров поиска
 
@@ -336,7 +344,7 @@ class Database:
         Получить индекс поиска.
 
         Args:
-            self_id: ID пользователя.
+            self_id (int): ID пользователя.
 
         Returns:
             int: Индекс поиска.
@@ -352,8 +360,8 @@ class Database:
         Изменить индекс поиска для пользователя.
 
         Args:
-            user_id: ID пользователя.
-            new_index: Новый индекс для пользователя.
+            self_id (int): ID пользователя.
+            new_index (int): Новый индекс для пользователя.
 
         Returns:
             None.
@@ -371,7 +379,7 @@ class Database:
         Получить результаты поиска.
 
         Args:
-            self_id: ID пользователя.
+            self_id (int): ID пользователя.
 
         Returns:
             dict: Словарь результатов поиска.
