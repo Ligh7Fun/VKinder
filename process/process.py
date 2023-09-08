@@ -9,7 +9,7 @@ from keyboards.keyboards import (create_action_keyboard,
                                  create_start_conversation_keyboard,
                                  )
 from vkapi.vkapi import Vkapi
-from utils.utils import calculate_age, get_country_iso
+from utils.utils import calculate_age
 
 logging.basicConfig(filename='bot.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -356,21 +356,17 @@ def process_search(vk: Vkapi, db: Database, user_id: int) -> None:
     data = db.get_search(user_id)
     count = 50
     sex = '1' if data['sex'].lower() == 'женщину' else '2'
-    city = data['city']
-    age_from = data['age_from']
-    age_to = data['age_to']
-    country_iso = get_country_iso(city_name=city)
-    country_id = vk.get_country_id(country_code=country_iso)
 
     search_results = vk.vk_user.users.search(count=count,
-                                             country_id=country_id,
+                                             country=1,  # Россия
                                              sex=sex,
-                                             city_id=vk.get_city_id(
-                                                     city_name=city
+                                             city=vk.get_city_id(
+                                                     data['city']
                                              ),
-                                             age_from=str(age_from),
-                                             age_to=str(age_to),
-                                             has_photo=True,
+                                             age_from=str(data['age_from']
+                                                          ),
+                                             age_to=str(data['age_to']),
+                                             has_photo='1',
                                              status='6',
                                              sort=1,
                                              fields="city, bdate, sex"
