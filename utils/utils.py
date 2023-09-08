@@ -1,3 +1,5 @@
+import requests
+
 from datetime import datetime
 
 
@@ -21,3 +23,24 @@ def calculate_age(birth_date: str) -> int:
         age -= 1
 
     return age
+
+def get_country_iso(city_name: str) -> str | None:
+    """
+    Получает код страны в формате ISO 3166-1 alpha-2 по названию города.
+
+    Args:
+        city_name (str): Название города.
+
+    Returns:
+        str | None: Код страны в формате ISO 3166-1 alpha-2,
+            если город найден, иначе None.
+    """
+    api_key = "demo"
+    url = (f"http://api.geonames.org/searchJSON?q="
+           f"{city_name}&maxRows=1&username={api_key}")
+    response = requests.get(url)
+    data = response.json()
+    if "geonames" in data and len(data["geonames"]) > 0:
+        country_code = data["geonames"][0]["countryCode"]
+        return country_code
+    return None

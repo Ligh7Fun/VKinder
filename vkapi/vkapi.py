@@ -6,7 +6,7 @@ import vk_api
 from vk_api.bot_longpoll import VkBotLongPoll
 from vk_api.upload import VkUpload
 from vk_api.utils import get_random_id
-
+from utils.utils import get_country_iso
 
 logging.basicConfig(filename='bot.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -125,10 +125,33 @@ class Vkapi:
         Returns:
             int | None: Идентификатор города, если он есть, иначе None.
         """
-        response = self.vk_user.database.getCities(country_id=1, q=city_name)
+        country_iso = get_country_iso(city_name=city_name)
+        country_id = self.get_country_id(country_code=country_iso)
+        response = self.vk_user.database.getCities(country_id=country_id,
+                                                   q=city_name
+                                                   )
         if response['count'] > 0:
             city = response['items'][0]
             return city['id']
+        else:
+            return None
+
+    def get_country_id(self, country_code: str) -> int | None:
+        """
+        Получает идентификатор страны по её коду в формате ISO 3166-1 alpha-2.
+
+        Args:
+            country_code (str): Код страны.
+
+        Returns:
+            int | None: Идентификатор страны, если она есть, иначе None.
+        """
+        response = self.vk_user.database.getCountries(need_all=1,
+                                                      code=country_code
+                                                      )
+        if response['count'] > 0:
+            country = response['items'][0]
+            return country['id']
         else:
             return None
 
