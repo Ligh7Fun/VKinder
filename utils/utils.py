@@ -1,6 +1,13 @@
+import os
 import requests
 
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# api.geonames.org key
+geonames_key = os.getenv("GEONAMES_KEY")
 
 
 def calculate_age(birth_date: str) -> int:
@@ -24,6 +31,7 @@ def calculate_age(birth_date: str) -> int:
 
     return age
 
+
 def get_country_iso(city_name: str) -> str | None:
     """
     Получает код страны в формате ISO 3166-1 alpha-2 по названию города.
@@ -35,9 +43,8 @@ def get_country_iso(city_name: str) -> str | None:
         str | None: Код страны в формате ISO 3166-1 alpha-2,
             если город найден, иначе None.
     """
-    api_key = "demo"
     url = (f"http://api.geonames.org/searchJSON?q="
-           f"{city_name}&maxRows=1&username={api_key}")
+           f"{city_name}&maxRows=1&username={geonames_key}")
     response = requests.get(url)
     data = response.json()
     if "geonames" in data and len(data["geonames"]) > 0:

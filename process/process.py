@@ -354,7 +354,7 @@ def process_search(vk: Vkapi, db: Database, user_id: int) -> None:
     """
     vk.write_msg(user_id=user_id, message="Начинаем искать...")
     data = db.get_search(user_id)
-    count = 50
+    count = 100
     sex = '1' if data['sex'].lower() == 'женщину' else '2'
     city = data['city']
     age_from = data['age_from']

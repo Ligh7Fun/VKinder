@@ -139,6 +139,7 @@ def main():
 if __name__ == "__main__":
 
     load_dotenv()
+
     # VK API initialization
     token_group = os.getenv("TOKEN_GROUP")
     token_user = os.getenv("TOKEN_USER")
