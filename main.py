@@ -127,7 +127,7 @@ def main():
                             f"{url}{item['viewed_vk_id']}"
                             for item in req_like]
                         )
-                        vk.write_msg(user_id, req_list)
+                        vk.write_msg(user_id=user_id, message=req_list)
                 else:
                     vk.write_msg(user_id=user_id,
                                  message=f"Вы ранее уже заполнили профиль, "
@@ -139,9 +139,14 @@ def main():
 if __name__ == "__main__":
 
     load_dotenv()
+    # VK API initialization
     token_group = os.getenv("TOKEN_GROUP")
     token_user = os.getenv("TOKEN_USER")
     group_id = os.getenv("GROUP_ID")
+    vk = Vkapi(token_group=token_group,
+               token_user=token_user,
+               group_id=group_id
+               )
 
     # DB initialization
     usernamedb = os.getenv("USERNAMEDB")
@@ -152,11 +157,8 @@ if __name__ == "__main__":
     DSN = f"postgresql://{usernamedb}:{password}@{host}:{port}/{databasename}"
     db = Database(DSN)
     db.create_tables()
-
-    vk = Vkapi(token_group=token_group,
-               token_user=token_user,
-               group_id=group_id
-               )
+    db.add_status(status="Like")
+    db.add_status(status="Dislike")
 
     # Запуск бота
     logging.info("Bot started")
