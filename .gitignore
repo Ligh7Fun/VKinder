@@ -1,0 +1,10 @@
+# Папки
+.venv/
+venv/
+.vscode/
+.idea/
+**/__pycache__/
+
+# Файлы
+.env
+bot.log
