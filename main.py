@@ -26,18 +26,65 @@ logging.basicConfig(filename='bot.log', level=logging.INFO,
                     )
 
 
-def handle_start_request(user_id, db):
+from typing import Dict, List
+
+
+def handle_start_request(user_id: int, db: Database) -> None:
+    """
+    Обрабатывает начало общения с ботом.
+
+    Args:
+        user_id (int): ID пользователя.
+        db (Database): Экземпляр класса Database для взаимодействия с базой.
+
+    Returns:
+        None.
+    """
     if db.get_state_user(self_id=user_id) is None:
         db.set_state_user(self_id=user_id, state="waiting_for_gender")
 
-def handle_showing_profiles(user_id, vk, db):
+def handle_showing_profiles(user_id: int, vk: Vkapi, db: Database) -> None:
+    """
+    Обрабатывает запрос на отображение профилей пользователей.
+
+    Args:
+        user_id (int): ID пользователя.
+        vk (Vkapi): Экземпляр класса Vkapi для выполнения вызовов VK API.
+        db (Database): Экземпляр класса Database для взаимодействия с базой.
+
+    Returns:
+        None.
+    """
     process_search(vk=vk, db=db, user_id=user_id)
 
-def handle_change_settings(user_id, db, vk):
+def handle_change_settings(user_id: int, db: Database, vk: Vkapi) -> None:
+    """
+    Обрабатывает запрос на изменение настроек профиля.
+
+    Args:
+        user_id (int): ID пользователя.
+        db (Database): Экземпляр класса Database для взаимодействия с базой.
+        vk (Vkapi): Экземпляр класса Vkapi для выполнения вызовов VK API.
+
+    Returns:
+        None.
+    """
     db.set_state_user(self_id=user_id, state="waiting_for_city")
     start_conversation(vk=vk, db=db, user_id=user_id)
 
-def handle_like_dislike_actions(request, user_id, db, vk):
+def handle_like_dislike_actions(request: str, user_id: int, db: Database, vk: Vkapi) -> None:
+    """
+    Обрабатывает действия "лайк" и "дизлайк" для профилей пользователей.
+
+    Args:
+        request (str): Запрос пользователя ("👍 лайк" или "👎 дизлайк").
+        user_id (int): ID пользователя.
+        db (Database): Экземпляр класса Database для взаимодействия с базой.
+        vk (Vkapi): Экземпляр класса Vkapi для выполнения вызовов VK API.
+
+    Returns:
+        None.
+    """
     search_results = db.get_search_results(self_id=user_id)
     index = db.get_search_index(self_id=user_id)
     profile = search_results[index]["id"]
@@ -52,7 +99,18 @@ def handle_like_dislike_actions(request, user_id, db, vk):
     db.set_search_index(self_id=user_id, new_index=index + 1)
     display_profile(vk=vk, db=db, user_id=user_id)
 
-def handle_favorite_actions(user_id, db, vk):
+def handle_favorite_actions(user_id: int, db: Database, vk: Vkapi) -> None:
+    """
+    Обрабатывает действия, связанные с избранными профилями.
+
+    Args:
+        user_id (int): ID пользователя.
+        db (Database): Экземпляр класса Database для взаимодействия с базой.
+        vk (Vkapi): Экземпляр класса Vkapi для выполнения вызовов VK API.
+
+    Returns:
+        None.
+    """
     vk.write_msg(user_id=user_id, message=f"Список избранных пользователей", keyboard=create_menu_keyboard())
     req_like = db.request_liked_list(self_id=user_id)
     
@@ -60,7 +118,19 @@ def handle_favorite_actions(user_id, db, vk):
     req_list = "\n".join([f"{item['first_name']} {item['last_name']} {url}{item['viewed_vk_id']}" for item in req_like])
     vk.write_msg(user_id=user_id, message=req_list)
 
-def handle_state(user_id, vk, db, request):
+def handle_state(user_id: int, vk: Vkapi, db: Database, request: str) -> None:
+    """
+    Основная функция для управления состоянием пользователя.
+
+    Args:
+        user_id (int): ID пользователя.
+        vk (Vkapi): Экземпляр класса Vkapi для выполнения вызовов VK API.
+        db (Database): Экземпляр класса Database для взаимодействия с базой.
+        request (str): Запрос пользователя.
+
+    Returns:
+        None.
+    """
     user_state_db = db.get_state_user(user_id)
 
     if user_state_db == "waiting_for_gender":
@@ -86,6 +156,8 @@ def handle_state(user_id, vk, db, request):
             handle_like_dislike_actions(request, user_id, db, vk)
     else:
         vk.write_msg(user_id=user_id, message=f"Вы ранее уже заполнили профиль, выберите действие.", keyboard=create_search_or_city_keyboard())
+
+
 
 def main():
     for event in vk.longpoll.listen():
